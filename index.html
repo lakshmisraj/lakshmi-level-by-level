@@ -1,0 +1,1164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A pixel game of Lakshmi growing up: eight chapters from Ryan International at 3 to Brooklyn now.">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>Lakshmi, Level by Level</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Sometype+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: one centered 16:9 game screen with HUD, cards and dialog layered inside; mini-games and the memory book open as full-viewport cards; touch pad below on phones. Single dark "night lamp" look: indigo ink, jasmine text, marigold accent, kumkum red and peacock teal as secondaries. */
+:root{
+  --ink:#120d1f; --panel:#1d1530; --panel2:#2a2045; --line:#3d2f5c;
+  --jasmine:#fbf3e4; --muted:#b9abd2; --marigold:#f4a52b; --kumkum:#e0475b; --peacock:#2bb3a3;
+  --display:"Pixelify Sans", ui-monospace, Menlo, monospace;
+  --body:"Sometype Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{margin:0;background:var(--ink);color:var(--jasmine);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));}
+.wrap{max-width:1040px;margin:0 auto;padding-block:16px 24px;display:flex;flex-direction:column;gap:12px}
+header.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+header.top h1{font-family:var(--display);font-weight:700;font-size:clamp(20px,3vw,28px);margin:0;letter-spacing:.02em;text-wrap:balance}
+header.top h1 span{color:var(--marigold)}
+header.top p{margin:0;color:var(--muted);font-size:13px}
+.screen{position:relative;width:100%;aspect-ratio:16/9;max-width:100%;background:#000;border:3px solid var(--line);border-radius:8px;overflow:hidden;user-select:none;-webkit-user-select:none}
+canvas#cv{width:100%;height:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+.bars::before,.bars::after{content:"";position:absolute;left:0;right:0;height:0;background:#000;z-index:5;transition:height .9s ease}
+.bars::before{top:0}.bars::after{bottom:0}
+.screen.cine .bars::before,.screen.cine .bars::after{height:11%}
+.bars{position:absolute;inset:0;pointer-events:none}
+.hud{position:absolute;inset:0;pointer-events:none;z-index:6;font-family:var(--display)}
+.hud .chap{position:absolute;left:10px;top:8px;background:rgba(18,13,31,.78);border:2px solid var(--line);border-radius:6px;padding:3px 9px;font-size:clamp(10px,1.5vw,14px)}
+.hud .chap .np{display:block;color:var(--muted);font-size:.82em;font-weight:400}
+.hud .chap b{color:var(--marigold);font-weight:600;margin-right:6px}
+.hud .right{position:absolute;right:10px;top:8px;display:flex;gap:6px;pointer-events:auto}
+.hud button,.btn{font-family:var(--display);font-size:clamp(10px,1.4vw,14px);background:rgba(18,13,31,.82);color:var(--jasmine);border:2px solid var(--line);border-radius:6px;padding:3px 9px;cursor:pointer}
+.hud button:hover,.btn:hover{border-color:var(--marigold)}
+button:focus-visible{outline:2px solid var(--marigold);outline-offset:2px}
+.screen.cine .hud .chap,.screen.cine .hud .hint{opacity:0;transition:opacity .4s}
+.hud .hint{position:absolute;left:50%;transform:translateX(-50%);bottom:8px;font-size:clamp(9px,1.2vw,12px);color:var(--muted);background:rgba(18,13,31,.7);padding:2px 8px;border-radius:5px;white-space:nowrap}
+.toast{position:absolute;left:50%;top:14%;transform:translate(-50%,-8px);opacity:0;z-index:8;background:var(--marigold);color:#2a1606;font-family:var(--display);font-weight:600;padding:5px 12px;border-radius:6px;font-size:clamp(11px,1.6vw,15px);transition:opacity .25s, transform .25s;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.dialog{position:absolute;left:3%;right:3%;bottom:4%;z-index:7;background:rgba(18,13,31,.94);border:3px solid var(--jasmine);border-radius:8px;padding:10px 14px 12px;min-height:22%;box-shadow:0 4px 0 rgba(0,0,0,.4)}
+.screen.cine .dialog{bottom:13%;border-color:transparent;background:rgba(0,0,0,.55);text-align:center}
+.dialog .who{font-family:var(--display);color:var(--marigold);font-weight:600;font-size:clamp(11px,1.6vw,16px)}
+.dialog .txt{font-size:clamp(11px,1.65vw,17px);line-height:1.45;max-width:70ch;margin-inline:auto}
+.screen:not(.cine) .dialog .txt{margin-inline:0}
+.dialog .more{position:absolute;right:12px;bottom:6px;color:var(--marigold);animation:blink 1s steps(2) infinite;font-family:var(--display)}
+.screen.cine .dialog .more{display:none}
+@keyframes blink{50%{opacity:0}}
+.layer{position:absolute;inset:0;z-index:9;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:4%}
+.title-layer{background:radial-gradient(ellipse at 50% 120%, #3a1f4f 0%, #120d1f 60%) , var(--ink)}
+.title-layer h2{font-family:var(--display);font-size:clamp(26px,6vw,60px);margin:0;line-height:1;text-wrap:balance}
+.title-layer h2 em{font-style:normal;color:var(--marigold)}
+.title-layer p{margin:0;color:var(--muted);font-size:clamp(11px,1.6vw,15px);max-width:52ch}
+.title-layer .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.btn.big{font-size:clamp(13px,2vw,18px);padding:7px 16px;background:var(--panel2)}
+.btn.primary{background:var(--marigold);color:#2a1606;border-color:var(--marigold);font-weight:600}
+.card-layer{background:#000}
+.card-layer .age{font-family:var(--display);font-weight:700;font-size:clamp(34px,9vw,92px);line-height:1;color:var(--marigold)}
+.card-layer .ct{font-family:var(--display);font-size:clamp(14px,2.6vw,26px)}
+.card-layer .yr{color:var(--muted);font-size:clamp(10px,1.4vw,13px);letter-spacing:.14em;text-transform:uppercase}
+.card-layer .nar{max-width:56ch;font-size:clamp(11px,1.7vw,16px);color:var(--jasmine);min-height:3em;font-style:italic}
+.card-layer canvas{width:clamp(48px,9vw,96px);height:auto;image-rendering:pixelated;aspect-ratio:1}
+.fade{transition:opacity .8s}
+.end-layer{background:#000;overflow:hidden;justify-content:flex-start}
+.credits{position:absolute;left:0;right:0;top:100%;display:flex;flex-direction:column;gap:14px;align-items:center;padding:0 8%}
+.credits h3{font-family:var(--display);color:var(--marigold);font-size:clamp(18px,3.4vw,34px);margin:0}
+.credits .ln{font-size:clamp(10px,1.5vw,14px);color:var(--jasmine)}
+.credits .ln span{color:var(--muted)}
+.end-actions{position:absolute;bottom:5%;left:0;right:0;display:flex;gap:10px;justify-content:center;z-index:2}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(8,5,16,.78);display:flex;align-items:center;justify-content:center;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px))}
+.modal .card{background:var(--panel);border:3px solid var(--jasmine);border-radius:10px;padding:16px;width:min(560px,100%);max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:12px}
+.modal h3{font-family:var(--display);margin:0;font-size:20px;color:var(--marigold)}
+.modal p{margin:0}
+.modal .sub{color:var(--muted);font-size:13px}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{font-family:var(--body);text-align:left;background:var(--panel2);color:var(--jasmine);border:2px solid var(--line);border-radius:6px;padding:9px 11px;cursor:pointer;font-size:14px;white-space:pre-wrap}
+.opt:hover{border-color:var(--marigold)}
+.opt.bad{border-color:var(--kumkum)}
+.opt.good{border-color:var(--peacock);background:#163a3a}
+.feedback{min-height:1.5em;font-size:14px}
+.feedback.good{color:var(--peacock)}.feedback.bad{color:#ff8b98}
+.console{background:#05040a;border:2px solid var(--line);border-radius:6px;padding:8px 10px;font-size:13px;color:#8ef0a6;min-height:5.2em;white-space:pre}
+.board{display:grid;grid-template-columns:repeat(8,1fr);width:min(360px,100%);aspect-ratio:1;border:3px solid #5b3c22;align-self:center}
+.sq{border:0;padding:0;margin:0;font-size:clamp(20px,6vw,34px);line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:"Segoe UI Symbol","Apple Symbols","Noto Sans Symbols 2",serif}
+.sq.l{background:#ecd7b0}.sq.d{background:#a9774d}
+.sq.sel{box-shadow:inset 0 0 0 3px var(--peacock)}
+.sq.win{box-shadow:inset 0 0 0 3px var(--kumkum)}
+.pw{color:#fffaf0;text-shadow:0 0 1px #000,0 0 2px #000,1px 1px 0 #000}
+.pb{color:#1b120c}
+.pods{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pod{aspect-ratio:1.6;border-radius:8px;border:2px solid var(--line);background:#163a3a;color:var(--jasmine);font-family:var(--display);font-size:14px;cursor:pointer}
+.pod.crash{background:#5a1622;border-color:var(--kumkum);animation:shake .3s infinite}
+@keyframes shake{25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+.stats{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--display);font-variant-numeric:tabular-nums}
+.stats b{color:var(--marigold)}
+.lanes{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.lanes button{font-family:var(--display);font-size:22px;padding:8px 0;background:var(--panel2);color:var(--jasmine);border:2px solid var(--line);border-radius:6px;cursor:pointer;touch-action:manipulation}
+canvas.dance{width:100%;max-width:320px;aspect-ratio:32/22;align-self:center;image-rendering:pixelated;background:#24142f;border-radius:6px}
+.book .chapter{border-top:2px solid var(--line);padding-top:8px}
+.book .chapter h4{font-family:var(--display);margin:0 0 4px;font-size:15px}
+.book .chapter h4 span{color:var(--muted);font-weight:400;font-size:12px}
+.book ul{margin:0;padding-left:18px;font-size:13px}
+.book li.no{color:#6f6488}
+.pad{display:none;justify-content:space-between;align-items:center;gap:12px;padding-top:4px}
+.dpad{display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,52px);gap:4px}
+.dpad button,.abtn{background:var(--panel2);border:2px solid var(--line);color:var(--jasmine);border-radius:10px;font-family:var(--display);font-size:20px;touch-action:none}
+.dpad .u{grid-column:2;grid-row:1}.dpad .l{grid-column:1;grid-row:2}.dpad .r{grid-column:3;grid-row:2}.dpad .d{grid-column:2;grid-row:3}
+.abtn{width:76px;height:76px;border-radius:50%;background:var(--marigold);color:#2a1606;font-weight:700;border-color:var(--marigold)}
+@media (pointer:coarse){.pad{display:flex}.hud .hint{display:none}}
+footer.note{color:var(--muted);font-size:12px;display:flex;gap:14px;flex-wrap:wrap}
+footer.note kbd{font-family:var(--display);background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--jasmine)}
+@media (max-width:640px){
+  .dialog{position:static;margin-top:8px;border-width:2px;min-height:0}
+  .screen{overflow:visible;aspect-ratio:auto}
+  .screen canvas#cv{aspect-ratio:16/9;height:auto}
+  .screen.cine .dialog{background:#000}
+  .layer,.bars{aspect-ratio:16/9;bottom:auto;height:auto}
+  .layer{bottom:auto}
+  .title-layer p{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Lakshmi, <span>Level by Level</span></h1>
+    <p>A pixel game of growing up, from Ryan International at 3 to Brooklyn in 2026.</p>
+  </header>
+
+  <div class="screen" id="screen">
+    <canvas id="cv" aria-label="Game world"></canvas>
+    <div class="bars"></div>
+    <div class="hud" id="hud" hidden>
+      <div class="chap" id="chap"></div>
+      <div class="right">
+        <button id="bookBtn" type="button">Memories <span id="memCount">0</span></button>
+        <button id="muteBtn" type="button" aria-pressed="false">Sound on</button>
+      </div>
+      <div class="hint" id="hint">Arrows / WASD to walk · E or Space to look and talk · M for memories</div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <div class="dialog" id="dialog" hidden><div class="who" id="who"></div><div class="txt" id="txt"></div><div class="more">▼</div></div>
+
+    <div class="layer title-layer" id="titleL">
+      <h2>Lakshmi,<br><em>Level by Level</em></h2>
+      <p>Eight chapters, from a crooked school tie at three to late nights, hackathons and the D train in Brooklyn. Walk around, open every memory, and grow up one chapter at a time.</p>
+      <div class="row">
+        <button class="btn big primary" id="playBtn" type="button">Play</button>
+        <button class="btn big" id="contBtn" type="button" hidden>Continue</button>
+      </div>
+    </div>
+
+    <div class="layer card-layer fade" id="cardL" hidden>
+      <canvas id="cardCv" width="64" height="64"></canvas>
+      <div class="age" id="cardAge"></div>
+      <div class="ct" id="cardTitle"></div>
+      <div class="yr" id="cardYr"></div>
+      <div class="nar" id="cardNar"></div>
+      <div class="yr" id="cardGo"></div>
+    </div>
+
+    <div class="layer end-layer" id="endL" hidden>
+      <div class="credits" id="credits"></div>
+      <div class="end-actions" id="endActions" hidden>
+        <button class="btn big primary" id="againBtn" type="button">Play again</button>
+        <button class="btn big" id="endBook" type="button">Memory book</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pad" id="pad">
+    <div class="dpad">
+      <button class="u" data-d="up" aria-label="Walk up">▲</button>
+      <button class="l" data-d="left" aria-label="Walk left">◀</button>
+      <button class="r" data-d="right" aria-label="Walk right">▶</button>
+      <button class="d" data-d="down" aria-label="Walk down">▼</button>
+    </div>
+    <button class="abtn" id="aBtn" aria-label="Look or talk">A</button>
+  </div>
+
+  <footer class="note">
+    <span><kbd>←↑↓→</kbd> or <kbd>WASD</kbd> walk</span>
+    <span><kbd>E</kbd> / <kbd>Space</kbd> look, talk, continue</span>
+    <span><kbd>M</kbd> memory book</span>
+    <span>The score is original chiptune in the style of each era's music.</span>
+    <span>Sparkles mark things you haven't looked at yet. Doors open once a chapter's main moments are done.</span>
+  </footer>
+</div>
+
+<div class="modal" id="mini" hidden><div class="card" id="miniCard"></div></div>
+<div class="modal" id="book" hidden><div class="card book" id="bookCard"></div></div>
+
+<script>
+(() => {
+'use strict';
+const W = 320, H = 180, S = 2;
+const cv = document.getElementById('cv'); let g = cv.getContext('2d');
+cv.width = W * S; cv.height = H * S;
+const $ = id => document.getElementById(id);
+const screen = $('screen');
+
+/* ---------- drawing helpers ---------- */
+const R = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); };
+const C = (x, y, r, c) => { g.fillStyle = c; g.beginPath(); g.arc(x, y, Math.max(.4, r), 0, 7); g.fill(); };
+const E = (x, y, rx, ry, c) => { g.fillStyle = c; g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, 7); g.fill(); };
+const P = (pts, c) => { g.fillStyle = c; g.beginPath(); g.moveTo(pts[0], pts[1]); for (let i = 2; i < pts.length; i += 2) g.lineTo(pts[i], pts[i + 1]); g.closePath(); g.fill(); };
+const T = (s, x, y, c, sz = 8, al = 'center', wt = 600) => { g.fillStyle = c; g.font = `${wt} ${sz}px "Pixelify Sans", ui-monospace, monospace`; g.textAlign = al; g.textBaseline = 'middle'; g.fillText(s, x, y); };
+
+const SKIN = '#8d5a3b', HAIR = '#16100c', CURL = '#3a2619';
+
+/* ---------- people ---------- */
+const CURLS = [[0,-29,6],[-5,-28,4.4],[5,-28,4.4],[-7.5,-24,4],[7.5,-24,4],[-7.5,-20,3.6],[7.5,-20,3.6],[-6.5,-16,3.2],[6.5,-16,3.2],[-3,-31,3.6],[3,-31,3.6],[-4,-13.5,2.6],[4,-13.5,2.6]];
+const FRINGE = [[-3.6,-29.4,2.7],[0,-30.4,2.9],[3.6,-29.4,2.7],[-5.8,-27.2,2.2],[5.8,-27.2,2.2]];
+function curls(list, v, col, hi, lower) {
+  for (const [dx, dy, r] of list) {
+    if (lower !== undefined && (dy > -18) !== lower) continue;
+    const y = -25 + (dy + 25) * (dy > -25 ? v : 1), x = dx * (0.82 + 0.22 * v), rr = r * (0.78 + 0.26 * v);
+    if (dy > -25 && v < .72 && dy > -18) continue;
+    C(x, y, rr, col); C(x - rr * .35, y - rr * .35, rr * .38, hi);
+  }
+}
+function person(x, y, o, t, moving, dir) {
+  const s = o.scale || 1;
+  g.save(); g.translate(Math.round(x), Math.round(y)); g.scale(s, s);
+  const ph = moving ? t * 11 : 0, sw = moving ? Math.sin(ph) : 0, bob = moving ? -Math.abs(Math.sin(ph)) * 1.1 : 0;
+  E(0, 0, 7, 2.4, 'rgba(0,0,0,.28)');
+  const skin = o.skin || SKIN, legC = o.legs || skin, up = dir === 'up';
+  const l1 = Math.max(0, sw) * 1.6, l2 = Math.max(0, -sw) * 1.6;
+  R(-4, -10, 3, 10 - l1, legC); R(1, -10, 3, 10 - l2, legC);
+  if (o.socks) { R(-4, -4 - l1, 3, 2, o.socks); R(1, -4 - l2, 3, 2, o.socks); }
+  if (o.bells) { R(-4.5, -3.2 - l1, 4, 1.2, '#e9b949'); R(.5, -3.2 - l2, 4, 1.2, '#e9b949'); }
+  R(-4.6, -1.6 - l1, 4, 2, o.shoe || '#2a1d18'); R(.6, -1.6 - l2, 4, 2, o.shoe || '#2a1d18');
+  g.translate(0, bob);
+  const hairC = o.hairC || HAIR, hi = o.hairHi || CURL, v = o.vol || 1;
+  if (!up) hairBack(o, hairC, hi, v);
+  // fan pleat (Bharatanatyam)
+  if (o.fan) { P([-2.5,-11, 2.5,-11, 6,-3, -6,-3], o.fan); for (let i = -4; i <= 4; i += 2) R(i, -9, .8, 6, o.trim || '#e9b949'); R(-6, -3.6, 12, 1, o.trim || '#e9b949'); }
+  // skirt
+  if (o.skirt) { P([-5,-12, 5,-12, 7,-5, -7,-5], o.skirt); if (o.check) { for (let i = -6; i < 7; i += 3) R(i, -12, .8, 7, 'rgba(255,255,255,.22)'); R(-6.5, -9, 13, .8, 'rgba(255,255,255,.22)'); } }
+  // torso
+  const tl = o.topLen || 9;
+  R(-5, -20, 10, tl, o.top);
+  if (o.kurta) { P([-5,-12, 5,-12, 6.5,-6, -6.5,-6], o.top); R(-6.5, -7, 13, 1, o.trim || 'rgba(255,255,255,.3)'); }
+  if (o.trim && !o.kurta) { R(-5, -20 + tl - 1.2, 10, 1.2, o.trim); R(-1.5, -20, 3, 1.2, o.trim); }
+  if (o.shirtV) { P([-2,-20, 2,-20, 0,-15], o.shirtV); }
+  if (o.tie) { R(-.8, -19.5, 1.6, 5.5, o.tie); P([-1.4,-14.4, 1.4,-14.4, 0,-12.6], o.tie); }
+  if (o.lanyard) { P([-3,-20, -2,-20, 0,-15, 0,-14], o.lanyard); P([3,-20, 2,-20, 0,-15, 0,-14], o.lanyard); R(-1.5, -15, 3, 3, '#f3efe6'); }
+  if (o.hood) { R(-4, -20.5, 8, 2, o.hood); R(-3, -14, 6, 2.4, o.hood); R(-1.5, -19, .6, 3, '#eee'); R(1, -19, .6, 3, '#eee'); }
+  if (o.logo) { T(o.logo, 0, -16.5, '#fbf3e4', 3.2); }
+  // arms
+  const sl = o.sleeve || o.top;
+  R(-7, -19.5 + sw * .8, 2.2, 7.5, sl); C(-5.9, -11.6 + sw * .8, 1.2, skin);
+  R(4.8, -19.5 - sw * .8, 2.2, 7.5, sl); C(5.9, -11.6 - sw * .8, 1.2, skin);
+  if (o.bangles) { R(-7.2, -13 + sw * .8, 2.6, .8, '#e9b949'); R(4.6, -13 - sw * .8, 2.6, .8, '#e9b949'); }
+  // neck + head
+  R(-1.5, -22, 3, 2.4, skin);
+  if (o.necklace) { R(-3, -20.6, 6, .9, '#e9b949'); }
+  C(0, -25.5, 5, skin);
+  if (up) { hairBack(o, hairC, hi, v); }
+  hairFront(o, hairC, hi, v, up, dir);
+  if (!up) {
+    const ex = dir === 'left' ? -1.6 : dir === 'right' ? 1.6 : 0;
+    R(-2.6 + ex, -26, 1.1, 1.7, '#140b07'); R(1.5 + ex, -26, 1.1, 1.7, '#140b07');
+    R(-4 + ex, -24, 1.6, 1, 'rgba(224,71,91,.4)'); R(2.4 + ex, -24, 1.6, 1, 'rgba(224,71,91,.4)');
+    R(-1 + ex, -22.8, 2, .8, '#4a1f18');
+    if (o.bindi) C(ex * .6, -28.2, .55, '#d6223a');
+    if (o.glasses) { g.strokeStyle = '#222'; g.lineWidth = .6; g.strokeRect(-3.6 + ex, -27, 3, 2.6); g.strokeRect(.6 + ex, -27, 3, 2.6); }
+  }
+  g.restore();
+}
+function hairBack(o, c, hi, v) {
+  const st = o.hair || 'curly';
+  if (st === 'curly') { curls(CURLS, v, c, hi); if (o.puffs) { C(-8, -29, 3.6, c); C(-8.8, -29.8, 1.4, hi); C(8, -29, 3.6, c); C(7.2, -29.8, 1.4, hi); R(-6, -30, 1.4, 2, o.puffs); R(4.6, -30, 1.4, 2, o.puffs); } if (o.jasmine) { for (let i = 0; i < 6; i++) C(7.5 - i * .4, -29 + i * 2.6, 1, '#fffdf4'); } }
+  else if (st === 'long') { R(-6, -28, 12, 14, c); }
+  else if (st === 'bun') { C(0, -32, 3.2, c); }
+  else if (st === 'braid') { R(-1.5, -24, 3, 14, c); }
+}
+function hairFront(o, c, hi, v, up, dir) {
+  const st = o.hair || 'curly';
+  if (st === 'curly') { if (up) curls(CURLS, Math.max(v, .8), c, hi, false); curls(FRINGE, 1, c, hi); }
+  else if (st === 'short' || st === 'long' || st === 'bun' || st === 'braid' || st === 'grey') {
+    const col = st === 'grey' ? '#bdb6ad' : c;
+    g.fillStyle = col; g.beginPath(); g.arc(0, -26.5, 5.6, Math.PI, 0); g.fill(); R(-5.6, -27, 2, 3, col); R(3.6, -27, 2, 3, col);
+    if (up) C(0, -25.5, 5.2, col);
+  }
+  else if (st === 'cap') { g.fillStyle = o.capC || '#333'; g.beginPath(); g.arc(0, -27, 5.6, Math.PI, 0); g.fill(); R(dir === 'left' ? -8 : 0, -27.5, 8, 1.6, o.capC || '#333'); }
+}
+
+/* ---------- objects / furniture ---------- */
+function NPC(k, fx, fy, look, name, lines, extra = {}) {
+  const s = look.scale || 1;
+  return Object.assign({ k, x: fx - 7 * s, y: fy - 30 * s, w: 14 * s, h: 30 * s, fh: 5, npc: look, name, lines, draw(o, t) { person(fx, fy, look, t, false, look.dir || 'down'); } }, extra);
+}
+function sparkle(x, y, t) {
+  const a = .55 + .45 * Math.sin(t * 4 + x);
+  g.globalAlpha = a; const c = '#ffd27a';
+  R(x - .5, y - 3, 1, 6, c); R(x - 3, y - .5, 6, 1, c); R(x - 1, y - 1, 2, 2, '#fff');
+  g.globalAlpha = 1;
+}
+function room(L, wall, wallD, fa, fb, wood) {
+  R(0, 0, L.lw, L.lh, fa);
+  if (wood) { for (let y = L.wallH; y < L.lh; y += 8) { R(0, y, L.lw, 1, fb); for (let x = ((y / 8) % 2) * 24; x < L.lw; x += 48) R(x, y, 1, 8, fb); } }
+  else { for (let y = L.wallH; y < L.lh; y += 16) for (let x = 0; x < L.lw; x += 16) if (((x + y) / 16) % 2) R(x, y, 16, 16, fb); }
+  R(0, 0, L.lw, L.wallH, wall); R(0, L.wallH - 5, L.lw, 5, wallD); R(0, L.wallH, L.lw, 3, 'rgba(0,0,0,.18)');
+  R(0, 0, 4, L.lh, wallD); R(L.lw - 4, 0, 4, L.lh, wallD); R(0, L.lh - 4, L.lw, 4, wallD);
+}
+function doorDraw(o, t) {
+  const open = !lockedKeys().length;
+  R(o.x - 2, o.y - 2, o.w + 4, o.h + 2, '#4a3222');
+  R(o.x, o.y, o.w, o.h, open ? '#f4a52b' : '#7a5236');
+  if (open) { g.globalAlpha = .35 + .25 * Math.sin(t * 3); R(o.x + 3, o.y + 3, o.w - 6, o.h - 3, '#fff3c4'); g.globalAlpha = 1; }
+  else { R(o.x + 3, o.y + 4, o.w - 6, o.h / 2 - 6, '#8d6142'); R(o.x + 3, o.y + o.h / 2 + 1, o.w - 6, o.h / 2 - 5, '#8d6142'); }
+  C(o.x + o.w - 5, o.y + o.h / 2 + 2, 1.4, '#e9b949');
+  if (o.label) T(o.label, o.x + o.w / 2, o.y - 7, open ? '#ffd27a' : '#f3efe6', 6.5);
+}
+function plant(x, y) { R(x - 5, y - 8, 10, 8, '#b5562f'); R(x - 6, y - 9, 12, 2, '#c96a3f'); C(x, y - 14, 6, '#3f8f4e'); C(x - 4, y - 12, 4, '#4fa85e'); C(x + 4, y - 17, 4, '#4fa85e'); }
+function table(x, y, w, h, top, leg) { R(x + 2, y + 6, 2, h - 6, leg); R(x + w - 4, y + 6, 2, h - 6, leg); R(x, y, w, 7, top); R(x, y + 6, w, 1.5, 'rgba(0,0,0,.25)'); }
+function palm(x, y, t) { E(x, y, 9, 3, 'rgba(0,0,0,.2)'); for (let i = 0; i < 6; i++) R(x - 1.5 + Math.sin(i * .7) * 1.2, y - 6 - i * 6, 3.5, 6.5, i % 2 ? '#8a6a45' : '#9d7a52'); const sway = Math.sin(t * 1.2 + x) * 1.5; for (let a = 0; a < 6; a++) { const ang = a / 6 * Math.PI * 2; g.strokeStyle = '#2f8a46'; g.lineWidth = 3; g.beginPath(); g.moveTo(x, y - 40); g.quadraticCurveTo(x + Math.cos(ang) * 10 + sway, y - 46 + Math.sin(ang) * 4, x + Math.cos(ang) * 17 + sway, y - 36 + Math.sin(ang) * 7); g.stroke(); } C(x - 1, y - 39, 2, '#6b4a2b'); C(x + 2, y - 38, 2, '#6b4a2b'); }
+
+/* ---------- levels ---------- */
+const GIRL = { skin: SKIN, hair: 'curly' };
+const LEVELS = [
+/* 1 */ {
+  id: 'school', age: 'Age 3', title: 'Ryan International School', years: 'First day of school',
+  nar: 'I was three. The tie was crooked, the classroom was enormous, and everything had a name I wanted to learn.',
+  lw: 400, lh: 200, wallH: 56, spawn: [40, 160], style: 'carnatic',
+  look: { ...GIRL, scale: .62, vol: .62, puffs: '#e0475b', top: '#f3efe6', skirt: '#2b3a67', check: 1, tie: '#c8102e', socks: '#fff', shoe: '#1c1c22' },
+  intro: [['Teacher', 'Good morning, Lakshmi! Welcome to Ryan International School.'], ['Teacher', 'Find your school tie, your crayons and your lunchbox. Then we can go out to the playground.']],
+  bg(L, t) {
+    room(L, '#bfe0f0', '#7aa9c4', '#efe2c4', '#e6d3ad');
+    E(200, 145, 70, 24, '#e07a5f'); E(200, 145, 62, 20, '#f2cc8f');
+    ['A','B','C','D','E','F'].forEach((l, i) => { const a = i / 6 * Math.PI * 2; T(l, 200 + Math.cos(a) * 46, 145 + Math.sin(a) * 13, ['#e0475b','#2b7bbf','#3f8f4e','#f4a52b','#8e44ad','#e0475b'][i], 8, 'center', 700); });
+    for (let i = 0; i < 8; i++) { const c = ['#e0475b','#f4a52b','#3f8f4e','#2b7bbf'][i % 4]; P([20 + i * 12, 2, 32 + i * 12, 2, 26 + i * 12, 10], c); }
+  },
+  objs: [
+    { k: 'board', wall: 1, x: 24, y: 12, w: 112, h: 44, name: 'Blackboard', mem: 'The alphabet on the blackboard', lines: ['A for Apple. B for Ball. C for Cat.', 'You said all twenty-six letters before lunch on the first day. Then you said them again, louder.'],
+      draw(o) { R(o.x, o.y, o.w, 34, '#6b4a2e'); R(o.x + 3, o.y + 3, o.w - 6, 28, '#2f4a3a'); T('A  B  C   1  2  3', o.x + o.w / 2, o.y + 13, '#f3efe6', 8); T('☺', o.x + o.w / 2, o.y + 24, '#f3efe6', 8); R(o.x + 8, o.y + 33, 18, 2, '#ddd'); } },
+    { k: 'window', wall: 1, x: 156, y: 12, w: 72, h: 44, name: 'Window', mem: 'The yellow school bus', lines: ['The school bus waits outside, bright yellow.', 'You waved at the driver every morning, and he always waved back.'],
+      draw(o, t) { R(o.x, o.y, o.w, 36, '#f3efe6'); R(o.x + 3, o.y + 3, o.w - 6, 30, '#9fd3f2'); R(o.x + 3, o.y + 25, o.w - 6, 8, '#7cc47f'); const bx = o.x + 12 + Math.sin(t * .6) * 4; R(bx, o.y + 14, 40, 12, '#f2b705'); for (let i = 0; i < 4; i++) R(bx + 3 + i * 9, o.y + 16, 6, 5, '#cfe9f7'); C(bx + 8, o.y + 27, 3, '#222'); C(bx + 32, o.y + 27, 3, '#222'); R(o.x + o.w / 2 - 1, o.y + 3, 2, 30, '#f3efe6'); } },
+    { k: 'hooks', wall: 1, key: 1, x: 248, y: 14, w: 46, h: 42, name: 'School tie', mem: 'My first school tie', lines: ['Your tie hangs on the lowest hook, the one with a star sticker and your name.', 'You put it on yourself. Crooked, but on.'],
+      draw(o) { R(o.x, o.y + 8, o.w, 4, '#8a5a3c'); for (let i = 0; i < 4; i++) { R(o.x + 6 + i * 11, o.y + 12, 2, 4, '#555'); } R(o.x + 6, o.y + 16, 8, 12, '#d94f70'); R(o.x + 28, o.y + 16, 9, 13, '#5b8bd9'); if (!o.done) { R(o.x + 18, o.y + 15, 3, 12, '#c8102e'); P([o.x + 17, o.y + 27, o.x + 22, o.y + 27, o.x + 19.5, o.y + 30], '#c8102e'); } T('★', o.x + 19.5, o.y + 4, '#f4a52b', 7); } },
+    { k: 'door', door: 1, wall: 1, x: 344, y: 14, w: 30, h: 42, label: 'Playground', draw: doorDraw },
+    NPC('teacher', 92, 92, { skin: '#9a6644', hair: 'bun', top: '#3a8f6a', topLen: 15, legs: '#3a8f6a', shoe: '#3b2a20', bindi: 1, bangles: 1 }, 'Teacher', [['Teacher', 'Your tie is on the hooks, the crayons are on the little table, and your lunchbox is in the cubbies.'], ['Teacher', 'When you have all three, the playground door is yours.']]),
+    { k: 'crayons', key: 1, x: 178, y: 104, w: 46, h: 22, fh: 10, name: 'Crayon table', mem: 'Wax crayons', lines: ['A box of wax crayons, one of each colour.', 'You drew a sun with a face and gave it curly hair. It is still the best sun anyone has drawn.'],
+      draw(o) { table(o.x, o.y, o.w, o.h, '#f4a52b', '#b4772a'); R(o.x + 8, o.y + 1, 14, 5, '#fff'); for (let i = 0; i < 6; i++) R(o.x + 26 + i * 2.6, o.y + 1, 2, 5, ['#e0475b','#f4a52b','#f2e14b','#3f8f4e','#2b7bbf','#8e44ad'][i]); C(o.x + 15, o.y + 3.5, 2, '#f2b705'); } },
+    { k: 'cubby', key: 1, x: 300, y: 64, w: 40, h: 30, fh: 12, name: 'Cubbies', mem: 'The steel lunchbox', lines: ['Your steel tiffin box, packed at home this morning, still warm.', 'You opened it at 10 a.m. just to check. Then again at 10:05.'],
+      draw(o) { R(o.x, o.y, o.w, o.h, '#a8744a'); for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) R(o.x + 3 + c * 12.4, o.y + 3 + r * 13, 10, 11, '#6e4a2f'); if (!o.done) { R(o.x + 16, o.y + 8, 8, 6, '#cfd6dd'); R(o.x + 16, o.y + 7, 8, 1.5, '#9aa3ab'); } R(o.x + 4, o.y + 19, 8, 5, '#e0475b'); } },
+    { k: 'blocks', x: 44, y: 128, w: 30, h: 26, fh: 8, name: 'Toy blocks', mem: 'The tower of blocks', lines: ['You built a tower taller than you. It fell over.', 'You built it again, wider at the bottom. It stayed up. Your first lesson in system design.'],
+      draw(o) { const cs = ['#e0475b','#2b7bbf','#f4a52b','#3f8f4e','#8e44ad']; for (let i = 0; i < 5; i++) R(o.x + 8 + (i % 2) * 2, o.y + o.h - 6 - i * 5, 10, 5, cs[i]); R(o.x, o.y + o.h - 5, 6, 5, '#f4a52b'); R(o.x + 22, o.y + o.h - 5, 6, 5, '#2b7bbf'); } },
+    NPC('kid1', 236, 172, { skin: '#a8714a', hair: 'short', top: '#f3efe6', legs: '#2b3a67', scale: .6, socks: '#fff' }, 'Arjun', [['Arjun', 'I have a red crayon and a blue crayon. Do you want the blue one?'], 'You said yes. You became friends for the rest of the year.'], { mem: 'A first friend' }),
+    NPC('kid2', 150, 178, { skin: '#7a4e33', hair: 'long', top: '#f3efe6', skirt: '#2b3a67', check: 1, scale: .6, socks: '#fff' }, 'Meera', [['Meera', 'Do you know the song about the wheels on the bus?'], 'You both did. You sang it until the teacher laughed.']),
+  ]
+},
+/* 2 */ {
+  id: 'dance', age: 'Age 5 – 6', title: 'Rhymes, Rooks & Bharatanatyam', years: 'Home and the dance hall',
+  nar: 'At five I started Bharatanatyam. At six I sang every nursery rhyme at full volume, and I learned to play chess.',
+  lw: 520, lh: 210, wallH: 60, spawn: [40, 170], style: 'carnatic',
+  look: { ...GIRL, scale: .68, vol: .82, jasmine: 1, top: '#c8102e', trim: '#e9b949', fan: '#1f7a4d', legs: '#c8102e', bells: 1, shoe: SKIN, necklace: 1, bindi: 1, bangles: 1 },
+  intro: [['Guru', 'Lakshmi! Tie your ghungroo and come to the hall. Today, your first adavu.'], 'The chessboard in the living room is set up too. And the cassette player is waiting for a song.'],
+  bg(L, t) {
+    room(L, '#f2d7b6', '#c79a6a', '#d9b48a', '#c99f74', true);
+    R(270, 0, 6, L.lh, '#a8744a'); R(276, L.wallH, L.lw - 280, L.lh - L.wallH - 4, '#b98552');
+    for (let y = L.wallH; y < L.lh; y += 10) R(276, y, L.lw - 280, 1, '#a8744a');
+    R(0, 0, 270, L.wallH - 5, '#e9c9a0');
+    E(130, 150, 64, 22, '#8e2a3c'); E(130, 150, 56, 18, '#b23a4c'); for (let i = 0; i < 8; i++) C(130 + Math.cos(i) * 40, 150 + Math.sin(i) * 12, 2, '#e9b949');
+    R(290, 8, 210, 42, '#cfd9df'); R(292, 10, 206, 38, '#e6eef2'); for (let i = 0; i < 5; i++) R(310 + i * 40, 12, 14, 34, 'rgba(255,255,255,.4)');
+    T('Mirror', 395, 4, '#7a5236', 5.5);
+  },
+  objs: [
+    { k: 'radio', key: 1, x: 24, y: 62, w: 34, h: 26, fh: 10, name: 'Cassette player', mem: 'Nursery rhymes at full volume', song: 1, lines: ['You press play. The cassette clicks and the speaker hums.', 'Twinkle Twinkle. Humpty Dumpty. Baa Baa Black Sheep. You knew every word and sang them louder than the tape.'],
+      draw(o, t) { table(o.x, o.y + 10, o.w, 16, '#8a5a3c', '#6e4a2f'); R(o.x + 4, o.y, 26, 12, '#333'); C(o.x + 10, o.y + 6, 3.5, '#777'); C(o.x + 24, o.y + 6, 3.5, '#777'); R(o.x + 14, o.y + 2, 6, 4, '#bbb'); if (o.playing) for (let i = 0; i < 3; i++) T('♪', o.x + 10 + i * 8, o.y - 6 - ((t * 20 + i * 7) % 14), '#f4a52b', 7); } },
+    { k: 'sofa', x: 70, y: 62, w: 80, h: 30, fh: 14, draw(o) { R(o.x, o.y, o.w, 22, '#3d6b8c'); R(o.x - 4, o.y + 6, 8, 22, '#335c78'); R(o.x + o.w - 4, o.y + 6, 8, 22, '#335c78'); R(o.x + 4, o.y + 14, o.w - 8, 12, '#4a7ea3'); R(o.x + 20, o.y + 6, 14, 10, '#e9b949'); } },
+    { k: 'chess', key: 1, mini: 'chess', x: 170, y: 120, w: 40, h: 26, fh: 12, name: 'Chessboard', mem: 'First checkmate', lines: ['A chess puzzle is set up on the little table. White to move.', 'Your family said there was one move that wins right now. One move.'], after: ['Qxf7. Checkmate in four moves, the oldest trick there is. You were six and you never forgot it.'], film: 'She looked at the board for a long time. Then: queen to f7. Checkmate.',
+      draw(o) { table(o.x, o.y, o.w, o.h, '#6e4a2f', '#4a3222'); for (let r = 0; r < 2; r++) for (let c = 0; c < 8; c++) R(o.x + 4 + c * 4, o.y + 1 + r * 2.5, 4, 2.5, (r + c) % 2 ? '#3a2618' : '#ecd7b0'); C(o.x + 12, o.y - 1, 1.6, '#fff'); C(o.x + 26, o.y - 1, 1.6, '#111'); } },
+    { k: 'tv', wall: 1, x: 170, y: 18, w: 46, h: 42, name: 'TV', mem: 'Saturday cartoons', lines: ['The TV in the corner. On Saturday mornings it was yours.', 'You watched cartoons, then turned the volume down and did the voices yourself.'],
+      draw(o, t) { R(o.x, o.y, o.w, 32, '#2a2a2a'); R(o.x + 4, o.y + 4, o.w - 14, 24, `hsl(${(t * 40) % 360},45%,55%)`); C(o.x + o.w - 5, o.y + 10, 2, '#888'); C(o.x + o.w - 5, o.y + 18, 2, '#888'); } },
+    { k: 'nataraja', x: 470, y: 70, w: 30, h: 36, fh: 10, name: 'Nataraja', mem: 'Bowing to Nataraja', lines: ['A small bronze Nataraja, the lord of dance, on a wooden stand.', 'Before every class you touched the floor and bowed. It felt like asking permission to begin.'],
+      draw(o) { R(o.x + 4, o.y + 26, 22, 10, '#6e4a2f'); g.strokeStyle = '#c08a3e'; g.lineWidth = 2; g.beginPath(); g.arc(o.x + 15, o.y + 15, 11, 0, 7); g.stroke(); for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; C(o.x + 15 + Math.cos(a) * 11, o.y + 15 + Math.sin(a) * 11, 1.2, '#e9b949'); } R(o.x + 13, o.y + 9, 4, 12, '#b07a36'); C(o.x + 15, o.y + 8, 2.4, '#b07a36'); R(o.x + 8, o.y + 12, 14, 2, '#b07a36'); P([o.x + 15, o.y + 20, o.x + 22, o.y + 16, o.x + 21, o.y + 18], '#b07a36'); R(o.x + 12, o.y + 20, 2, 6, '#b07a36'); } },
+    { k: 'lamp', x: 300, y: 70, w: 16, h: 32, fh: 6, name: 'Brass lamp', lines: ['A tall brass lamp. Someone lights it before class.', 'The flame flickers when you stamp your feet. You tried to make it flicker on purpose.'],
+      draw(o, t) { R(o.x + 7, o.y + 6, 2, 22, '#c08a3e'); E(o.x + 8, o.y + 29, 7, 2.5, '#c08a3e'); E(o.x + 8, o.y + 7, 6, 2, '#c08a3e'); C(o.x + 8, o.y + 3 + Math.sin(t * 9) * .5, 1.8, '#ffb703'); C(o.x + 8, o.y + 3.5, 1, '#fff6c4'); } },
+    NPC('guru', 400, 110, { skin: '#86553a', hair: 'bun', top: '#f4a52b', trim: '#c8102e', topLen: 15, legs: '#f4a52b', shoe: '#86553a', bindi: 1, bangles: 1, necklace: 1 }, 'Guru', [['Guru', 'Feet together, knees out, back straight. This is aramandi.'], ['Guru', 'Now follow the beat. Tha, thai, thaam. Your feet keep the rhythm, not your head.']], { key: 1, mini: 'dance', mem: 'My first adavu', after: [['Guru', 'Good. Again tomorrow. And the day after.'], 'You kept dancing for years. Your feet still know the count.'], film: 'Tha, thai, thaam. Her feet found the beat before her head did.' }),
+    { k: 'bells', x: 340, y: 150, w: 26, h: 12, fh: 8, name: 'Ghungroo', mem: 'Ghungroo bells', lines: ['Two strings of ghungroo bells, a hundred little brass bells on each.', 'They were heavy at five. You wore them anyway, and you liked the noise you made walking to class.'],
+      draw(o) { R(o.x, o.y + 4, o.w, 8, '#7a2030'); for (let i = 0; i < 6; i++) { C(o.x + 4 + i * 3.6, o.y + 6, 1.4, '#e9b949'); C(o.x + 4 + i * 3.6, o.y + 9.5, 1.4, '#e9b949'); } } },
+    { k: 'veena', tune: 1, x: 214, y: 62, w: 40, h: 26, fh: 10, name: 'Veena and tanpura', mem: 'Carnatic music at home', lines: ['A veena resting against the wall, a tanpura beside it.', 'Carnatic music filled the house from before you could walk. You knew the shape of a raga before you knew the word for it.'],
+      draw(o) { E(o.x + 8, o.y + 20, 7, 6, '#8a4a22'); R(o.x + 8, o.y + 16, 28, 3, '#6e3a1a'); C(o.x + 34, o.y + 17, 4, '#8a4a22'); for (let i = 0; i < 4; i++) R(o.x + 10, o.y + 16.3 + i * .7, 26, .3, '#e9e2d0'); R(o.x + 32, o.y, 3, 20, '#8a4a22'); E(o.x + 33.5, o.y + 22, 5, 4, '#a0602e'); } },
+    { k: 'door', door: 1, wall: 1, x: 236, y: 16, w: 28, h: 44, label: 'Bedroom', draw: doorDraw },
+    plantObj(20, 200), plantObj(500, 200),
+  ]
+},
+/* 3 */ {
+  id: 'science', age: 'Age 8 – 12', title: 'The Encyclopedia Years', years: 'Biology · Space · Physics',
+  nar: 'Then I found the encyclopedias. Hearts, planets, gravity. I wanted to know how everything worked, and why.',
+  lw: 500, lh: 220, wallH: 64, spawn: [40, 180], style: 'malayalam',
+  look: { ...GIRL, scale: .76, vol: .95, top: '#2bb3a3', legs: '#3b4a7a', shoe: '#e9e2d0' },
+  intro: ['Your room. Three shelves of encyclopedias, a telescope by the window, and a microscope you begged for.', 'Read one book from each shelf: biology, space and physics.'],
+  bg(L, t) {
+    room(L, '#2c3a6b', '#1e2850', '#7a6a8f', '#6c5c82');
+    for (let i = 0; i < 26; i++) { const x = (i * 97) % L.lw, y = 6 + (i * 37) % 44; const a = .5 + .5 * Math.sin(t * 2 + i); g.globalAlpha = a; C(x, y, i % 4 ? .7 : 1.2, '#fff6c4'); } g.globalAlpha = 1;
+    E(250, 160, 80, 26, '#4a5a9a'); E(250, 160, 72, 22, '#5b6db0');
+  },
+  objs: [
+    shelf('bio', 30, '#3f8f4e', 'BIOLOGY', 'Biology volume', 'The human heart', ['Biology, volume H. The human heart beats about 100,000 times a day.', 'You found your pulse with two fingers, counted for a minute with a stopwatch, and wrote it in a notebook. Every day for a week.']),
+    shelf('space', 96, '#2b7bbf', 'SPACE', 'Space volume', 'Light from the Sun', ['Space, volume S. Sunlight takes about eight minutes to reach Earth.', 'So when you look at the Sun, you are seeing it eight minutes ago. You thought about that for days.']),
+    shelf('phys', 162, '#e0475b', 'PHYSICS', 'Physics volume', 'The hammer and the feather', ['Physics, volume G. On the Moon, a hammer and a feather dropped together land together.', 'An astronaut tried it on Apollo 15. You tried it with a pencil and a sock. The sock lost, because Earth has air.']),
+    { k: 'window', wall: 1, x: 250, y: 10, w: 60, h: 54, name: 'Window', draw(o, t) { R(o.x, o.y, o.w, 44, '#e6dccb'); R(o.x + 3, o.y + 3, o.w - 6, 38, '#0e1430'); C(o.x + 42, o.y + 14, 7, '#f6f0d2'); C(o.x + 40, o.y + 12, 1.6, '#d8d0aa'); C(o.x + 45, o.y + 17, 1.2, '#d8d0aa'); for (let i = 0; i < 6; i++) C(o.x + 8 + i * 7, o.y + 8 + (i * 13) % 26, .7, '#fff'); R(o.x + o.w / 2 - 1, o.y + 3, 2, 38, '#e6dccb'); }, lines: ['A clear night. The Moon is almost full.'] },
+    { k: 'scope', x: 262, y: 74, w: 26, h: 32, fh: 8, name: 'Telescope', mem: 'Craters on the Moon', lines: ['You point the telescope at the Moon and turn the focus knob slowly.', 'Craters. Real ones, with shadows inside them. You stayed up until someone told you to sleep. Twice.'],
+      draw(o) { g.strokeStyle = '#555'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(o.x + 13, o.y + 14); g.lineTo(o.x + 4, o.y + 32); g.moveTo(o.x + 13, o.y + 14); g.lineTo(o.x + 22, o.y + 32); g.moveTo(o.x + 13, o.y + 14); g.lineTo(o.x + 13, o.y + 32); g.stroke(); g.save(); g.translate(o.x + 13, o.y + 12); g.rotate(-.6); R(-12, -3, 22, 6, '#e9e2d0'); R(8, -3.5, 4, 7, '#2b7bbf'); g.restore(); } },
+    { k: 'micro', x: 330, y: 70, w: 44, h: 26, fh: 12, name: 'Microscope', mem: 'Onion cells', lines: ['A microscope, a glass slide and a thin peel of onion skin.', 'Under the lens it was a wall of tiny bricks. Every living thing is made of these, the book said. You looked at your own hair next.'],
+      draw(o) { table(o.x, o.y + 8, o.w, 18, '#8a6a9a', '#5e4a6e'); R(o.x + 18, o.y - 4, 4, 14, '#333'); R(o.x + 14, o.y + 6, 12, 3, '#555'); R(o.x + 17, o.y - 6, 6, 3, '#222'); R(o.x + 30, o.y + 6, 8, 2, '#cfe9f7'); } },
+    { k: 'globe', x: 400, y: 76, w: 22, h: 26, fh: 8, name: 'Globe', mem: 'Spinning the globe', lines: ['A globe on a wobbly stand. You spin it, close your eyes and put your finger down.', 'Wherever it stopped, you decided you would go there one day. Once it stopped on New York.'],
+      draw(o, t) { R(o.x + 9, o.y + 20, 4, 6, '#6e4a2f'); E(o.x + 11, o.y + 26, 7, 2, '#6e4a2f'); C(o.x + 11, o.y + 10, 9, '#2b7bbf'); const sp = (t * 6) % 18; R(o.x + 4 + sp % 10, o.y + 5, 5, 4, '#3f8f4e'); R(o.x + 8 + (sp + 5) % 8, o.y + 11, 6, 5, '#3f8f4e'); g.strokeStyle = '#c08a3e'; g.lineWidth = 1; g.beginPath(); g.arc(o.x + 11, o.y + 10, 10.5, -1.2, 1.9); g.stroke(); } },
+    { k: 'bed', x: 400, y: 140, w: 80, h: 44, fh: 30, name: 'Bed', mem: 'Glow-in-the-dark stars', lines: ['Your bed. On the ceiling above it, glow-in-the-dark stars.', 'You stuck them up in real constellations, using the space volume as a map. Orion was a little crooked.'],
+      draw(o) { R(o.x, o.y + 10, o.w, 30, '#6e4a2f'); R(o.x + 2, o.y + 10, o.w - 4, 22, '#e9e2d0'); R(o.x + 30, o.y + 12, o.w - 34, 22, '#e0475b'); for (let i = 0; i < 5; i++) T('★', o.x + 36 + i * 8, o.y + 22, '#f4a52b', 5); R(o.x + 4, o.y + 13, 22, 10, '#fff'); R(o.x, o.y, 6, 40, '#5a3a24'); } },
+    { k: 'solar', wall: 1, x: 340, y: 6, w: 120, h: 54, name: 'Solar system mobile', mem: 'The planets in order', lines: ['A paper solar system you made, hanging on threads.', 'My Very Educated Mother Just Served Us Noodles. You said it before every test, even maths ones.'],
+      draw(o, t) { const cols = ['#f4a52b','#b0a08a','#e9c46a','#2b7bbf','#e0475b','#d9a066','#e9d8a6','#7fd1d9','#4062bb']; cols.forEach((c, i) => { const x = o.x + 6 + i * 13, y = o.y + 18 + Math.sin(t + i) * 2; R(x, o.y, .7, y - o.y, '#aaa'); C(x, y, i === 0 ? 5 : 2 + (i % 4) * .7, c); if (i === 6) { g.strokeStyle = '#e9d8a6'; g.lineWidth = .8; g.beginPath(); g.ellipse(x, y, 5, 1.4, 0, 0, 7); g.stroke(); } }); } },
+    { k: 'dbag', x: 200, y: 150, w: 24, h: 18, fh: 8, name: 'Dance bag', mem: 'Still dancing', lines: ['Your dance bag by the door, ghungroo inside.', 'Encyclopedias on weekdays, Bharatanatyam on weekends. You never had to choose.'],
+      draw(o) { R(o.x, o.y + 4, o.w, 14, '#c8102e'); R(o.x, o.y + 4, o.w, 2, '#e9b949'); R(o.x + 7, o.y, 10, 5, '#a00d25'); C(o.x + 12, o.y + 11, 2, '#e9b949'); } },
+    { k: 'radio3', tune: 1, x: 120, y: 118, w: 28, h: 18, fh: 8, name: 'Radio', mem: 'Malayalam film songs', lines: ['The radio on the floor plays Malayalam film songs every evening.', 'From six to eight you knew every song from the new films and held the long notes longer than the singers did.'],
+      draw(o, t) { R(o.x, o.y + 4, o.w, 14, '#b5562f'); R(o.x + 3, o.y + 7, 10, 8, '#3a2618'); for (let i = 0; i < 3; i++) R(o.x + 4, o.y + 8 + i * 2.4, 8, .8, '#6e4a2f'); R(o.x + 16, o.y + 8, 9, 3, '#f4e7a1'); R(o.x + 20 + Math.sin(t) * 3, o.y + 8, 1, 3, '#e0475b'); R(o.x + 22, o.y - 4, 1, 8, '#999'); for (let i = 0; i < 2; i++) T('♪', o.x + 8 + i * 10, o.y - 3 - ((t * 14 + i * 6) % 10), '#f4a52b', 6); } },
+    { k: 'door', door: 1, wall: 1, x: 465, y: 18, w: 26, h: 46, label: 'Study', draw: doorDraw },
+  ]
+},
+/* 4 */ {
+  id: 'code', age: 'Age 13', title: 'Hello, World', years: 'The first program',
+  nar: 'At thirteen I typed my first program. The computer did exactly what I told it, every single time. That felt like a superpower.',
+  lw: 380, lh: 210, wallH: 60, spawn: [40, 170], style: 'pop',
+  look: { ...GIRL, scale: .84, vol: 1.05, top: '#6c4ab6', legs: '#34507a', shoe: '#f3efe6', logo: '{ }' },
+  intro: ['The family computer, finally free. You have a book, a notebook full of flowcharts and a whole evening.', 'Sit at the computer and make it say hello. Three times.'],
+  bg(L, t) { room(L, '#d4c6a8', '#a9977a', '#9b7b5b', '#8d6e50', true); E(140, 150, 50, 16, '#3d6b8c'); },
+  objs: [
+    { k: 'pc', key: 1, mini: 'code', x: 110, y: 64, w: 62, h: 36, fh: 14, name: 'Computer', mem: 'Hello, World', lines: ['A beige computer with a big humming monitor. A blinking cursor.', 'The book says every programmer starts the same way. Make the computer say Hello, World.'], after: ['Three lines of Hello, World. You ran it eleven more times just to watch it work.'], film: 'Three lines of Hello, World. She ran it eleven more times just to watch it work.',
+      draw(o, t) { table(o.x, o.y + 14, o.w, 22, '#6e4a2f', '#4a3222'); R(o.x + 14, o.y - 8, 32, 24, '#d9d2bf'); R(o.x + 17, o.y - 5, 26, 17, '#0b1a12'); if (o.done) { for (let i = 0; i < 3; i++) R(o.x + 19, o.y - 3 + i * 4, 18, 1.6, '#8ef0a6'); } else if ((t * 2 | 0) % 2) R(o.x + 19, o.y - 3, 3, 2, '#8ef0a6'); R(o.x + 24, o.y + 16, 12, 2, '#bdb6a2'); R(o.x + 10, o.y + 17, 28, 4, '#ece6d2'); R(o.x + 46, o.y + 17, 6, 4, '#ece6d2'); } },
+    { k: 'book', x: 190, y: 80, w: 30, h: 18, fh: 10, name: 'Programming book', mem: 'The dog-eared chapter on loops', lines: ['A thick programming book. The chapter on loops is dog-eared and covered in pencil.', 'You read it at dinner under the table. Loops, then functions, then arrays. Then loops again.'],
+      draw(o) { table(o.x - 4, o.y + 6, 38, 12, '#6e4a2f', '#4a3222'); R(o.x, o.y, 22, 8, '#2b7bbf'); R(o.x, o.y + 6, 22, 2, '#fff'); R(o.x + 22, o.y + 1, 6, 6, '#f4a52b'); } },
+    { k: 'flow', wall: 1, x: 30, y: 10, w: 64, h: 50, name: 'Flowchart poster', mem: 'Flowcharts on the wall', lines: ['A flowchart you drew yourself: START, a diamond that asks a question, two arrows, END.', 'You drew one for making tea, one for homework, and one for convincing your parents to let you use the computer.'],
+      draw(o) { R(o.x, o.y, o.w, 42, '#f3efe6'); R(o.x + 22, o.y + 4, 20, 6, '#3f8f4e'); P([o.x + 32, o.y + 13, o.x + 42, o.y + 20, o.x + 32, o.y + 27, o.x + 22, o.y + 20], '#f4a52b'); R(o.x + 31, o.y + 10, 1, 3, '#333'); R(o.x + 31, o.y + 27, 1, 5, '#333'); R(o.x + 22, o.y + 32, 20, 6, '#e0475b'); R(o.x + 42, o.y + 20, 10, 1, '#333'); R(o.x + 52, o.y + 8, 1, 12, '#333'); } },
+    { k: 'night', wall: 1, x: 240, y: 10, w: 56, h: 50, name: 'Window', mem: 'Past bedtime', lines: ['It is dark outside. It has been dark for a while.', 'Past bedtime, screen brightness turned all the way down, one more bug to fix.'],
+      draw(o, t) { R(o.x, o.y, o.w, 42, '#e6dccb'); R(o.x + 3, o.y + 3, o.w - 6, 36, '#141a3a'); for (let i = 0; i < 4; i++) R(o.x + 8 + i * 11, o.y + 26 - (i % 2) * 8, 7, 13 + (i % 2) * 8, '#232a52'); for (let i = 0; i < 6; i++) if ((i + (t | 0)) % 3) R(o.x + 10 + i * 7, o.y + 30 - (i % 2) * 6, 1.5, 1.5, '#f4d35e'); R(o.x + o.w / 2 - 1, o.y + 3, 2, 36, '#e6dccb'); } },
+    { k: 'chessset', x: 300, y: 80, w: 40, h: 24, fh: 10, name: 'Chess set', mem: 'Code, the new puzzle', lines: ['Your chess set, a little dusty now.', 'Chess taught you to think three moves ahead. Code was the same game with more pieces.'],
+      draw(o) { table(o.x, o.y + 6, o.w, 18, '#8a6a45', '#5a4228'); for (let c = 0; c < 6; c++) R(o.x + 8 + c * 4, o.y + 6, 4, 3, c % 2 ? '#3a2618' : '#ecd7b0'); C(o.x + 14, o.y + 4, 1.6, '#fff'); C(o.x + 26, o.y + 4, 1.6, '#111'); } },
+    { k: 'cd', tune: 1, x: 226, y: 140, w: 26, h: 14, fh: 8, name: 'CD player', mem: 'Pop on repeat', lines: ['A CD player and a tangle of earphones.', 'From ten to fifteen it was pop: chart songs, music videos, every lyric memorised. You wrote your first programs with it playing.'],
+      draw(o, t) { E(o.x + 13, o.y + 9, 12, 5, '#c0c6cf'); E(o.x + 13, o.y + 8, 10, 4, '#e9eef3'); C(o.x + 13, o.y + 8, 2, '#9aa3ab'); g.strokeStyle = '#e0475b'; g.lineWidth = .8; g.beginPath(); g.moveTo(o.x + 24, o.y + 8); g.quadraticCurveTo(o.x + 32, o.y + 2, o.x + 28, o.y + 14); g.stroke(); } },
+    { k: 'door', door: 1, wall: 1, x: 330, y: 14, w: 28, h: 46, label: 'Exam hall', draw: doorDraw },
+    plantObj(20, 120),
+  ]
+},
+/* 5 */ {
+  id: 'olympiad', age: 'Class 8 – 10', title: 'Math Olympiad', years: 'Three olympiad wins · then rock through Class 12',
+  nar: 'Classes eight, nine and ten: maths olympiads. Three years in a row, I walked out of the hall with a medal.',
+  lw: 440, lh: 210, wallH: 58, spawn: [36, 175], style: 'rock',
+  look: { ...GIRL, scale: .9, vol: 1.12, top: '#f3efe6', skirt: '#2b3a67', topLen: 9, tie: '#2b3a67', socks: '#fff', shoe: '#1c1c22', legs: SKIN },
+  intro: [['Invigilator', 'Three papers, one for each year. Class 8, Class 9, Class 10.'], ['Invigilator', 'Take a seat at each desk when you are ready. Pencils only.']],
+  bg(L, t) { room(L, '#e8e3d3', '#bcb39c', '#cfc8b4', '#c4bca6'); },
+  objs: [
+    { k: 'board', wall: 1, x: 120, y: 8, w: 150, h: 50, name: 'Blackboard', mem: "Euler's identity", lines: ['Someone left an equation on the board: e to the i pi, plus one, equals zero.', 'Five of the most important numbers in maths in one short line. You copied it into the back of every notebook you owned.'],
+      draw(o) { R(o.x, o.y, o.w, 38, '#6b4a2e'); R(o.x + 3, o.y + 3, o.w - 6, 32, '#2f4a3a'); T('e^(iπ) + 1 = 0', o.x + o.w / 2, o.y + 14, '#f3efe6', 8); T('NO TALKING', o.x + o.w / 2, o.y + 27, '#f4a52b', 6); } },
+    { k: 'clock', wall: 1, x: 300, y: 10, w: 24, h: 48, name: 'Clock', lines: ['Two hours on the clock. It ticks louder than any clock you have ever heard.'], draw(o, t) { C(o.x + 12, o.y + 12, 10, '#f3efe6'); g.strokeStyle = '#333'; g.lineWidth = 1.2; g.beginPath(); g.arc(o.x + 12, o.y + 12, 10, 0, 7); g.stroke(); g.beginPath(); g.moveTo(o.x + 12, o.y + 12); g.lineTo(o.x + 12 + Math.cos(t) * 7, o.y + 12 + Math.sin(t) * 7); g.moveTo(o.x + 12, o.y + 12); g.lineTo(o.x + 12, o.y + 6); g.stroke(); } },
+    examDesk(0, 70, 100), examDesk(1, 170, 130), examDesk(2, 270, 100),
+    { k: 'podium', x: 360, y: 120, w: 44, h: 36, fh: 14, name: 'Trophy stand', mem: 'Three medals', lines: ['A stand for the medals. One space for each year.'], draw(o) { R(o.x, o.y + 16, o.w, 20, '#6e4a2f'); R(o.x, o.y + 16, o.w, 2, '#8a6a45'); for (let i = 0; i < 3; i++) { const won = level().objs.find(x => x.k === 'exam' + i)?.done; R(o.x + 6 + i * 13, o.y + 2, 1, 14, won ? '#e0475b' : '#555'); C(o.x + 6.5 + i * 13, o.y + 16, 4, won ? '#f4c430' : '#3d3d3d'); if (won) T(String(8 + i), o.x + 6.5 + i * 13, o.y + 16, '#6b4a00', 5); } }, cond: () => ['exam0','exam1','exam2'].every(k => level().objs.find(x => x.k === k).done), after: ['Class 8, Class 9, Class 10. Three gold medals on the stand.', 'You still remember the feeling of the last pencil stroke on each paper.'] },
+    NPC('inv', 60, 112, { skin: '#7a4e33', hair: 'grey', top: '#4a5a6a', legs: '#2a3340', shoe: '#222', glasses: 1 }, 'Invigilator', [['Invigilator', 'Do the questions in any order. Show your working.'], ['Invigilator', 'And no sighing loudly. Other people are thinking.']]),
+    { k: 'phones5', tune: 1, x: 196, y: 172, w: 22, h: 14, fh: 8, name: 'Headphones', mem: 'Then came rock', lines: ['A pair of headphones on the floor. Loud guitars leak out of them.', 'Around fifteen, pop gave way to rock. Through Class 11 and 12 it was guitars, drums and the volume all the way up, mostly while doing maths.'],
+      draw(o, t) { g.strokeStyle = '#222'; g.lineWidth = 2; g.beginPath(); g.arc(o.x + 11, o.y + 9, 7, Math.PI, 0); g.stroke(); R(o.x + 2, o.y + 8, 5, 6, '#e0475b'); R(o.x + 15, o.y + 8, 5, 6, '#e0475b'); if ((t * 4 | 0) % 2) { R(o.x - 2, o.y + 6, 2, 1, '#f4a52b'); R(o.x + 22, o.y + 6, 2, 1, '#f4a52b'); } } },
+    { k: 'door', door: 1, wall: 1, x: 390, y: 12, w: 28, h: 46, label: 'Class 12 → NITK', draw: doorDraw },
+  ]
+},
+/* 6 */ {
+  id: 'nitk', age: 'Age 18 – 22', title: 'NIT Karnataka', years: '2019 – 2023 · B.Tech, Information Technology',
+  nar: 'After Class 12, NIT Karnataka. Information Technology. Four years of labs, deadlines and sunsets beside the Arabian Sea.',
+  lw: 760, lh: 280, wallH: 0, outdoor: 1, bounds: [8, 96, 752, 236], spawn: [40, 150], style: 'kpop',
+  look: { ...GIRL, scale: .96, vol: 1.25, top: '#f4a52b', kurta: 1, topLen: 9, trim: '#c8102e', legs: '#2a2440', shoe: '#6e4a2f', bindi: 1 },
+  intro: ['First week on campus. The sea is right there, at the end of the road.', 'Get through the IT lab, the internship and graduation. The bus to Chennai leaves after that.'],
+  bg(L, t) {
+    R(0, 0, L.lw, 96, '#87c4e8'); R(0, 60, L.lw, 36, '#a5d6ee');
+    R(0, 92, L.lw, 150, '#6fae5a'); for (let i = 0; i < 90; i++) R((i * 53) % L.lw, 100 + (i * 29) % 130, 2, 2, '#5e9a4b');
+    R(0, 150, L.lw, 16, '#cdb994'); R(0, 150, L.lw, 2, '#b7a27b');
+    R(0, 232, L.lw, 20, '#ecd9a6'); R(0, 248, L.lw, 40, '#2f7fb0');
+    for (let i = 0; i < 12; i++) { const x = ((i * 70 + t * 14) % (L.lw + 60)) - 30; R(x, 250 + (i % 3) * 8, 22, 2, '#cfe9f7'); }
+    g.globalAlpha = .5 + .3 * Math.sin(t * 1.5); R(0, 247, L.lw, 2, '#fff'); g.globalAlpha = 1;
+  },
+  objs: [
+    { k: 'arch', x: 10, y: 22, w: 90, h: 72, fh: 6, solidRects: [[10, 82, 12, 12], [88, 82, 12, 12]], name: 'Main gate', mem: 'Getting into NITK', lines: ['The main gate. National Institute of Technology Karnataka, Surathkal.', 'You got in after Class 12 and chose Information Technology. Your family called everyone they knew.'],
+      draw(o) { R(o.x, o.y + 10, 12, 62, '#c9b79c'); R(o.x + o.w - 12, o.y + 10, 12, 62, '#c9b79c'); R(o.x - 4, o.y, o.w + 8, 16, '#a8946f'); T('NITK', o.x + o.w / 2, o.y + 8, '#2a1d10', 9, 'center', 700); } },
+    { k: 'lab', key: 1, x: 130, y: 20, w: 130, h: 74, fh: 30, name: 'IT department lab', mem: 'B.Tech, Information Technology', lines: ['The IT lab. Rows of computers, one fan that only works on Tuesdays.', 'Data structures, operating systems, networks, databases. Many all-nighters, and a few submissions at 11:59 p.m.'],
+      draw(o, t) { R(o.x, o.y, o.w, o.h, '#d9cbb2'); R(o.x, o.y, o.w, 8, '#8a3b2e'); T('DEPT. OF INFORMATION TECHNOLOGY', o.x + o.w / 2, o.y + 14, '#5a2a20', 5.5); for (let i = 0; i < 4; i++) { R(o.x + 10 + i * 30, o.y + 24, 20, 16, '#2c3e50'); R(o.x + 12 + i * 30, o.y + 26, 16, 10, (t * 2 + i | 0) % 3 ? '#8ef0a6' : '#2bb3a3'); } R(o.x + 55, o.y + 48, 20, 26, '#6e4a2f'); } },
+    { k: 'hostel', x: 290, y: 30, w: 90, h: 64, fh: 30, name: 'Hostel', mem: 'Hostel nights', lines: ['Your hostel block. Clothes on every balcony, music from at least three rooms.', 'Maggi at 2 a.m., group study that was mostly gossip, and friends who are still friends.'],
+      draw(o) { R(o.x, o.y, o.w, o.h, '#e2c9a4'); for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) { R(o.x + 8 + c * 20, o.y + 8 + r * 18, 12, 10, (r + c) % 3 ? '#5a6f8a' : '#f4d35e'); R(o.x + 6 + c * 20, o.y + 18 + r * 18, 16, 1.5, '#9b7b5b'); } R(o.x + 6, o.y + 18, 6, 4, '#e0475b'); } },
+    { k: 'canteen', x: 410, y: 40, w: 80, h: 54, fh: 26, name: 'Canteen', mem: 'Chai at the canteen', lines: ['The canteen. Five rupees for chai, ten for a samosa, free opinions from everyone.', 'Half of your best ideas in college started at this table.'],
+      draw(o) { R(o.x, o.y + 10, o.w, o.h - 10, '#c97b4a'); P([o.x - 6, o.y + 12, o.x + o.w / 2, o.y - 4, o.x + o.w + 6, o.y + 12], '#8a3b2e'); R(o.x + 10, o.y + 22, 60, 14, '#3a2618'); T('CANTEEN', o.x + o.w / 2, o.y + 29, '#f4d35e', 6); R(o.x + 30, o.y + 38, 20, 16, '#5a3a24'); } },
+    NPC('friend1', 440, 128, { skin: '#9a6644', hair: 'short', top: '#2b7bbf', legs: '#2a2a3a', shoe: '#ddd' }, 'Rahul', [['Rahul', 'Hackathon this weekend. 24 hours. Free pizza. You in?'], 'You were in. You were always in. That was your first hackathon, and not your last.'], { mem: 'The first hackathon' }),
+    NPC('friend2', 470, 132, { skin: '#7a4e33', hair: 'long', top: '#e0475b', legs: '#2a2440', shoe: '#6e4a2f', bindi: 1 }, 'Divya', [['Divya', 'Did you see the sunset yesterday? Lighthouse, tonight. Everyone is going.'], 'You went. You went most evenings after that.']),
+    { k: 'rbs', key: 1, x: 560, y: 120, w: 40, h: 26, fh: 12, name: 'Laptop under the tree', mem: 'RBS internship, summer 2022', lines: ['Summer 2022. Your laptop on a bench, a Royal Bank of Scotland internship badge beside it.', 'You built a dashboard tracking 15+ KPIs and cut reporting time in half. Your first real users.'],
+      draw(o) { R(o.x, o.y + 12, o.w, 4, '#7a5236'); R(o.x + 3, o.y + 16, 3, 10, '#5a3a24'); R(o.x + o.w - 6, o.y + 16, 3, 10, '#5a3a24'); R(o.x + 10, o.y + 2, 18, 10, '#333'); R(o.x + 11, o.y + 3, 16, 8, '#5fa8d3'); R(o.x + 8, o.y + 11, 22, 2, '#555'); R(o.x + 31, o.y + 7, 5, 6, '#5a2d82'); } },
+    { k: 'stage', x: 610, y: 30, w: 100, h: 64, fh: 24, name: 'Fest stage', mem: 'Fest nights', lines: ['The fest stage. Lights, sound check, the whole campus awake past midnight.', 'You knew that stage from the audience and from the wings.'],
+      draw(o, t) { R(o.x, o.y + 40, o.w, 24, '#5a3a24'); R(o.x, o.y + 4, 4, 40, '#333'); R(o.x + o.w - 4, o.y + 4, 4, 40, '#333'); R(o.x, o.y, o.w, 6, '#333'); for (let i = 0; i < 5; i++) { g.globalAlpha = .25 + .2 * Math.sin(t * 3 + i); P([o.x + 10 + i * 20, o.y + 6, o.x + i * 20, o.y + 40, o.x + 20 + i * 20, o.y + 40], ['#e0475b','#f4a52b','#2bb3a3','#8e44ad','#f4d35e'][i]); } g.globalAlpha = 1; } },
+    { k: 'grad', key: 1, x: 690, y: 160, w: 20, h: 14, fh: 8, name: 'Graduation cap', mem: 'Graduating, April 2023', lines: ['A graduation cap on the grass, tassel blowing in the sea wind.', 'April 2023. B.Tech in Information Technology, done. Four years went by faster than any exam.'],
+      draw(o, t) { E(o.x + 10, o.y + 12, 9, 2, 'rgba(0,0,0,.2)'); R(o.x + 4, o.y + 6, 12, 5, '#1c1c22'); P([o.x, o.y + 6, o.x + 10, o.y + 1, o.x + 20, o.y + 6, o.x + 10, o.y + 9], '#26262e'); R(o.x + 18, o.y + 6, 1, 6 + Math.sin(t * 4), '#f4c430'); } },
+    { k: 'light', x: 640, y: 168, w: 26, h: 76, fh: 10, solidRects: [[640, 232, 26, 12]], name: 'Lighthouse', mem: 'Sunset at the lighthouse', lines: ['The lighthouse at the edge of the beach.', 'Exams felt smaller from up here. The sea does that.'],
+      draw(o, t) { P([o.x + 4, o.y + 76, o.x + 22, o.y + 76, o.x + 18, o.y + 14, o.x + 8, o.y + 14], '#f3efe6'); for (let i = 0; i < 3; i++) P([o.x + 5 + i * 1.3, o.y + 66 - i * 20, o.x + 21 - i * 1.3, o.y + 66 - i * 20, o.x + 20.5 - i * 1.3, o.y + 58 - i * 20, o.x + 5.5 + i * 1.3, o.y + 58 - i * 20], '#e0475b'); R(o.x + 7, o.y + 6, 12, 9, '#333'); R(o.x + 8, o.y + 7, 10, 6, '#ffe58a'); P([o.x + 6, o.y + 6, o.x + 13, o.y, o.x + 20, o.y + 6], '#e0475b'); g.globalAlpha = .18 + .1 * Math.sin(t * 2); P([o.x + 13, o.y + 10, o.x + 13 + Math.cos(t) * 90, o.y + 2, o.x + 13 + Math.cos(t) * 90, o.y + 18], '#fff6c4'); g.globalAlpha = 1; } },
+    { k: 'waves', x: 360, y: 232, w: 90, h: 12, solid: 0, name: 'The beach', mem: 'A beach on campus', lines: ['The campus has its own beach. Not many colleges can say that.', 'You took your shoes off and stood where the waves stop. The Arabian Sea, warm as bathwater.'], draw() {} },
+    palmObj(110, 130), palmObj(280, 210), palmObj(520, 210), palmObj(395, 120), palmObj(740, 120),
+    { k: 'kpop', tune: 1, x: 330, y: 176, w: 24, h: 14, fh: 6, name: 'Earphones on the grass', mem: 'aespa and MAMAMOO', lines: ['Earphones on the grass, still playing: big synths, a huge chorus, four-part harmonies.', 'Your K-pop years. aespa and MAMAMOO on repeat, and dance practice videos at midnight in the hostel.'],
+      draw(o, t) { R(o.x + 4, o.y + 6, 14, 8, '#e9eef3'); R(o.x + 5, o.y + 7, 12, 5, '#8e44ad'); g.strokeStyle = '#fff'; g.lineWidth = .8; g.beginPath(); g.moveTo(o.x + 11, o.y + 6); g.quadraticCurveTo(o.x + 14, o.y - 2, o.x + 20, o.y + 2); g.moveTo(o.x + 11, o.y + 6); g.quadraticCurveTo(o.x + 6, o.y - 2, o.x + 2, o.y + 2); g.stroke(); C(o.x + 2, o.y + 2, 1.4, '#fff'); C(o.x + 20, o.y + 2, 1.4, '#fff'); for (let i = 0; i < 2; i++) T('♪', o.x + 6 + i * 12, o.y - 4 - ((t * 12 + i * 5) % 8), '#ff5fa2', 6); } },
+    { k: 'door', door: 1, x: 720, y: 60, w: 30, h: 34, label: 'Bus to Chennai', draw(o, t) { R(o.x + 13, o.y, 3, 34, '#555'); R(o.x, o.y, 30, 12, lockedKeys().length ? '#2b7bbf' : '#f4a52b'); T('BUS', o.x + 15, o.y + 6, '#fff', 6); if (!lockedKeys().length) { g.globalAlpha = .4 + .3 * Math.sin(t * 3); C(o.x + 15, o.y + 6, 12, '#fff3c4'); g.globalAlpha = 1; } T(o.label, o.x + 15, o.y - 6, '#2a1d10', 6.5); } },
+  ]
+},
+/* 7 */ {
+  id: 'citi', age: 'Age 22', title: 'Citi, Chennai', years: '2023 – 2024 · Software Development Engineer',
+  nar: '2023. Chennai. Citicorp Services. Real systems, real traffic, and filter coffee at four in the afternoon.',
+  lw: 560, lh: 220, wallH: 64, spawn: [40, 180], style: 'rnb',
+  look: { ...GIRL, scale: 1, vol: 1.32, top: '#2c3550', shirtV: '#f3efe6', legs: '#20263a', shoe: '#1a1a1a', lanyard: '#1e6fd9' },
+  intro: [['Priya', 'Welcome to the team! Fair warning: one of our services keeps crashing pods.'], ['Priya', 'Fix that, automate the people-data report, and grab a coffee. In that order or any order.']],
+  bg(L, t) { room(L, '#dfe4ea', '#9aa6b2', '#b9c0c8', '#adb4bd'); R(4, 64, 552, 2, '#e9eef3'); },
+  objs: [
+    { k: 'marina', wall: 1, x: 20, y: 8, w: 140, h: 56, name: 'Window', mem: 'Marina Beach from the office', lines: ['Through the glass, the city and a strip of the Bay of Bengal.', 'On weekends you went to Marina Beach for sundal and the wind. A different sea from college, same calm.'],
+      draw(o, t) { R(o.x, o.y, o.w, 46, '#9aa6b2'); R(o.x + 3, o.y + 3, o.w - 6, 40, '#f8c98a'); R(o.x + 3, o.y + 24, o.w - 6, 19, '#2f7fb0'); for (let i = 0; i < 8; i++) R(o.x + 6 + i * 16, o.y + 10 + (i % 3) * 4, 10, 14 - (i % 3) * 4, '#6b6f86'); R(o.x + 3, o.y + 36, o.w - 6, 7, '#ecd9a6'); C(o.x + 110, o.y + 14, 6, '#ffe58a'); for (let i = 1; i < 4; i++) R(o.x + i * 35, o.y + 3, 2, 40, '#9aa6b2'); } },
+    { k: 'uptime', wall: 1, x: 190, y: 10, w: 90, h: 54, name: 'Uptime board', mem: '99.98% uptime', lines: ['A big screen on the wall: service health for the whole division.', 'Your deployments held 99.98% uptime. You started to love a boring dashboard.'],
+      draw(o, t) { R(o.x, o.y, o.w, 42, '#1c2230'); R(o.x + 3, o.y + 3, o.w - 6, 36, '#0e1320'); T('UPTIME', o.x + 20, o.y + 10, '#8a94a8', 5.5); T('99.98%', o.x + 58, o.y + 11, '#8ef0a6', 9, 'center', 700); g.strokeStyle = '#2bb3a3'; g.lineWidth = 1; g.beginPath(); for (let i = 0; i < 40; i++) { const x = o.x + 6 + i * 2, y = o.y + 30 - Math.abs(Math.sin(i * .6 + t)) * 6; i ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); } },
+    { k: 'logo', wall: 1, x: 300, y: 18, w: 70, h: 30, draw(o) { T('Citi · Chennai', o.x + 35, o.y + 14, '#1e6fd9', 9, 'center', 700); } },
+    { k: 'desk', key: 1, mini: 'pods', x: 120, y: 100, w: 64, h: 34, fh: 16, name: 'Your desk', mem: 'The service that stopped the crashes', lines: ['Two monitors. On one of them, a wall of red: pods crashing over and over across the cluster.', 'Restart them fast, then fix the cause. You wrote a Spring Boot service that ended 10+ failures a day.'], after: ['Green across the board. The Spring Boot fix shipped the next week, and the 2 a.m. pages stopped.'], film: 'The pods kept crashing. She restarted them, found the cause, and wrote a Spring Boot service that stopped ten failures a day.',
+      draw(o, t) { cubicle(o); for (let i = 0; i < 2; i++) { R(o.x + 12 + i * 22, o.y - 4, 20, 13, '#222'); for (let j = 0; j < 6; j++) R(o.x + 14 + i * 22 + (j % 3) * 6, o.y - 2 + (j / 3 | 0) * 5, 4, 3, o.done ? '#8ef0a6' : ((t * 3 + j) | 0) % 2 ? '#e0475b' : '#8ef0a6'); } } },
+    { k: 'auto', key: 1, x: 230, y: 100, w: 64, h: 34, fh: 16, name: 'Automation script', mem: '200 hours saved every week', lines: ['A spreadsheet the Chief of Staff team filled in by hand. Every week. For hundreds of employees.', 'You wrote a Python script to collect it all into Excel. It saved more than 200 staff hours a week.'],
+      draw(o, t) { cubicle(o); R(o.x + 18, o.y - 4, 28, 14, '#222'); for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) R(o.x + 20 + c * 6.5, o.y - 2 + r * 4, 5.5, 3, r === 0 ? '#3f8f4e' : '#e9eef3'); T('py', o.x + 50, o.y + 4, '#f4d35e', 5); } },
+    { k: 'coffee', x: 470, y: 70, w: 30, h: 34, fh: 12, name: 'Coffee counter', mem: 'Filter coffee at 4 p.m.', lines: ['Filter coffee in a steel tumbler and dabarah, poured from a height to cool it.', 'Four p.m. every day, whatever was on fire. It was usually worth it.'],
+      draw(o, t) { R(o.x, o.y + 12, o.w, 22, '#6b6f86'); R(o.x + 6, o.y, 18, 14, '#c0c6cf'); R(o.x + 9, o.y + 3, 12, 6, '#333'); R(o.x + 12, o.y + 14, 5, 6, '#b0b6be'); for (let i = 0; i < 2; i++) { g.globalAlpha = .4; C(o.x + 14 + Math.sin(t * 2 + i) * 2, o.y - 3 - i * 4 - (t * 5 % 4), 1.6, '#fff'); } g.globalAlpha = 1; } },
+    NPC('priya', 360, 150, { skin: '#7a4e33', hair: 'long', top: '#e0475b', topLen: 13, legs: '#2a2440', shoe: '#222', bindi: 1, lanyard: '#1e6fd9' }, 'Priya', [['Priya', 'Your pod fix was on the release notes. My manager asked who you were.'], ['Priya', 'Also, you keep reading about NYU at lunch. Just apply already.']], { mem: 'A good teammate' }),
+    { k: 'letter', key: 1, x: 330, y: 100, w: 64, h: 34, fh: 16, name: 'Envelope on your desk', mem: 'The NYU admit', lines: ['An envelope with a violet torch on it. New York University, Tandon School of Engineering.', 'Admitted: MS in Computer Science, Fall 2024. You read the first line six times before the rest.'],
+      draw(o) { cubicle(o); if (!o.done) { R(o.x + 22, o.y + 2, 18, 12, '#f3efe6'); P([o.x + 22, o.y + 2, o.x + 31, o.y + 9, o.x + 40, o.y + 2], '#d8d2c2'); R(o.x + 29, o.y + 7, 4, 4, '#57068c'); } else { R(o.x + 20, o.y, 22, 14, '#f3efe6'); R(o.x + 23, o.y + 3, 14, 1, '#57068c'); R(o.x + 23, o.y + 6, 10, 1, '#999'); } } },
+    { k: 'phones7', tune: 1, x: 396, y: 176, w: 24, h: 14, fh: 8, name: 'Headphones', mem: 'Late-night playlists', lines: ['Big over-ear headphones, the commute playlist still going.', 'The Weeknd for late shifts, Cassie on the ride home, Travis Scott when a deploy had to go out tonight.'],
+      draw(o) { g.strokeStyle = '#111'; g.lineWidth = 2.2; g.beginPath(); g.arc(o.x + 12, o.y + 9, 8, Math.PI, 0); g.stroke(); R(o.x + 2, o.y + 7, 6, 7, '#1a1a1a'); R(o.x + 16, o.y + 7, 6, 7, '#1a1a1a'); R(o.x + 3, o.y + 9, 4, 3, '#e0475b'); R(o.x + 17, o.y + 9, 4, 3, '#e0475b'); } },
+    { k: 'door', door: 1, wall: 1, x: 516, y: 14, w: 30, h: 50, label: 'Airport', draw: doorDraw },
+    plantObj(20, 214), plantObj(440, 214),
+  ]
+},
+/* 8 */ {
+  id: 'brooklyn', age: 'Age 23 – now', title: 'Brooklyn, New York', years: 'Sept 2024 – now · NYU Tandon · Bensonhurst',
+  nar: 'September 2024. New York. NYU Tandon, an apartment in Bensonhurst, and the D train rattling overhead. I go out, I build things, I say yes to hackathons.',
+  lw: 880, lh: 280, wallH: 0, outdoor: 1, bounds: [8, 116, 872, 270], spawn: [40, 140], style: 'trap',
+  look: { ...GIRL, scale: 1, vol: 1.45, top: '#57068c', hood: '#43056b', legs: '#1c1a24', shoe: '#f3efe6', logo: 'NYU' },
+  intro: ['Your block in Bensonhurst. The D train goes over every few minutes and you have stopped hearing it.', 'Finish your master’s at Tandon, then see what is next.'],
+  bg(L, t) {
+    R(0, 0, L.lw, 120, '#1a1630'); for (let i = 0; i < 30; i++) C((i * 131) % L.lw, 6 + (i * 17) % 30, .6, '#d8d0ff');
+    R(0, 112, L.lw, 40, '#8f8a96'); for (let x = 0; x < L.lw; x += 24) R(x, 112, 1, 40, '#7d7884');
+    R(0, 152, L.lw, 76, '#2f2c36'); for (let x = 10; x < L.lw; x += 60) R(x, 189, 28, 3, '#e8d36a');
+    for (let i = 0; i < 6; i++) R(470 + i * 10, 154, 6, 72, '#e9e6ee');
+    R(0, 228, L.lw, 52, '#8f8a96'); for (let x = 0; x < L.lw; x += 24) R(x, 228, 1, 52, '#7d7884');
+    R(0, 0, L.lw, 14, '#3e4a44'); R(0, 14, L.lw, 3, '#2d3732'); for (let x = 20; x < L.lw; x += 80) R(x, 17, 5, 22, '#3e4a44');
+    const tx = ((t * 70) % (L.lw + 500)) - 400; for (let c = 0; c < 4; c++) { R(tx + c * 78, -6, 74, 18, '#b9bec6'); for (let w = 0; w < 6; w++) R(tx + c * 78 + 6 + w * 11, -2, 7, 6, '#f4e7a1'); } C(tx + 4 * 78 - 8, 3, 4, '#ff6319'); T('D', tx + 4 * 78 - 8, 3, '#fff', 5, 'center', 700);
+  },
+  objs: [
+    bldg('home', 14, 'Home', '#a65e4a', 'Your apartment', 'Bensonhurst, since 2024', ['Your building in Bensonhurst. Red brick, a creaky stoop, a neighbour who waters her tomatoes at 6 a.m.', 'You moved in in September 2024 with two suitcases. Now it is home.']),
+    bldg('bodega', 124, 'DELI', '#3e6b5a', 'Bodega', null, ['The corner deli. Bacon, egg and cheese, and a cat asleep on the bread shelf.', 'The guy at the counter knows your order and your exam schedule.'], { awning: '#e0475b' }),
+    { k: 'cat', x: 190, y: 132, w: 14, h: 10, fh: 6, name: 'Bodega cat', mem: 'The bodega cat', lines: ['The bodega cat opens one eye, decides you are fine, and closes it again.', 'Every New Yorker has a bodega cat. This one is yours.'],
+      draw(o, t) { E(o.x + 7, o.y + 7, 6, 3.5, '#e09a4a'); C(o.x + 12, o.y + 4.5, 3, '#e09a4a'); P([o.x + 10, o.y + 3, o.x + 11, o.y, o.x + 12.5, o.y + 2.5], '#e09a4a'); P([o.x + 12.5, o.y + 2.5, o.x + 14, o.y, o.x + 15, o.y + 3], '#e09a4a'); R(o.x, o.y + 6 + Math.sin(t * 2), 3, 1.5, '#e09a4a'); R(o.x + 11, o.y + 4, 1, .8, '#222'); R(o.x + 13, o.y + 4, 1, .8, '#222'); } },
+    bldg('bar', 234, 'BAR', '#2a1f3d', 'The bar', 'Nights out', ['Your favourite bar. Low lights, friends from four countries, and a DJ who plays M.I.A. and Cassie if you ask nicely.', 'You like going out. You know a good spot on every block now, and the best ones by heart.'], { neon: '#ff5fa2' }),
+    { k: 'mail', x: 344, y: 126, w: 14, h: 18, fh: 6, name: 'Mailbox', mem: 'Summer 2025 in California', lines: ['A postcard sticking out of your bag: Diamond Bar, California.', 'Summer 2025, a software engineering internship at Simplian. Your Spring Boot tool cut menu updates from ten minutes to two, run by one person instead of five.'],
+      draw(o) { R(o.x + 1, o.y + 4, 12, 14, '#2459a8'); E(o.x + 7, o.y + 5, 6, 3, '#2459a8'); R(o.x + 4, o.y + 8, 6, 1.2, '#cfe0f5'); } },
+    bldg('tandon', 372, 'NYU TANDON', '#57068c', 'NYU Tandon', 'MS Computer Science', ['NYU Tandon School of Engineering, Downtown Brooklyn.', 'MS in Computer Science. Distributed systems, cloud computing, a 3.6 GPA, and group projects on AWS that ran until sunrise.'], { key: 1, w: 120, tall: 1 }),
+    bldg('hack', 512, 'HACK NIGHT', '#3a3f4a', 'Hackathon hall', 'Hackathons', ['A warehouse full of laptops, energy drinks and whiteboards. A hackathon is on.', '24 hours, too much pizza, one demo that finally worked at 4 a.m. You keep coming back.'], { key: 1, neon: '#2bb3a3' }),
+    bldg('startup', 622, 'LAUNCH', '#f4a52b', 'Startup co-working space', 'Startups', ['A co-working floor. Sticky notes, a pitch deck on the big screen, someone saying "MVP" every minute.', 'Startups pull at you: small teams, real users, shipping fast. You like being close to where things begin.'], { dark: 1 }),
+    { k: 'stoop', x: 210, y: 238, w: 40, h: 22, fh: 10, name: 'Laptop on a stoop', mem: 'Side projects for fun', lines: ['Your laptop, open on a stoop on a warm evening.', 'Side projects nobody asked for: a city made of code, a duck therapist with no filter, a virtual pet that lives in a browser tab. You build things because it is fun.'],
+      draw(o) { R(o.x, o.y + 10, o.w, 12, '#9b7b6b'); R(o.x, o.y + 16, o.w, 6, '#8a6a5a'); R(o.x + 12, o.y + 2, 16, 9, '#333'); R(o.x + 13, o.y + 3, 14, 7, '#2bb3a3'); R(o.x + 10, o.y + 10, 20, 2, '#555'); } },
+    NPC('friendA', 300, 200, { skin: '#c99a7a', hair: 'short', top: '#2bb3a3', legs: '#1c1a24', shoe: '#eee' }, 'Sam', [['Sam', 'Rooftop thing in Bushwick on Friday, then the bar after. You are coming.'], 'It was not a question. You went.']),
+    NPC('friendB', 420, 205, { skin: '#6b4a32', hair: 'bun', top: '#f4a52b', legs: '#1c1a24', shoe: '#222' }, 'Ana', [['Ana', 'My startup needs a backend person for the hackathon. Kubernetes? Spring Boot? You?'], 'You said yes before she finished the sentence.']),
+    { k: 'station', x: 750, y: 40, w: 60, h: 72, fh: 20, name: 'D train station', mem: 'The D train', lines: ['Stairs up to the elevated D train.', 'Between here and Manhattan you read papers, wrote code on your phone and watched the city slide by.'],
+      draw(o) { R(o.x, o.y + 10, o.w, 62, '#3e4a44'); for (let i = 0; i < 8; i++) R(o.x + 8 + i * 4, o.y + 62 - i * 6, 22, 2, '#5a665f'); C(o.x + 46, o.y + 22, 7, '#ff6319'); T('D', o.x + 46, o.y + 22, '#fff', 8, 'center', 700); T('SUBWAY', o.x + 30, o.y + 6, '#fff', 6); } },
+    { k: 'grad', key: 1, x: 700, y: 236, w: 26, h: 20, fh: 8, name: 'Violet graduation cap', mem: 'NYU, May 2026', lines: ['A violet NYU cap, thrown in the air at Yankee Stadium and caught again.', 'May 2026. Master of Science in Computer Science. From a crooked tie at three to this.'],
+      draw(o, t) { const y = o.y + 6 + Math.sin(t * 2) * 1.5; E(o.x + 13, o.y + 18, 9, 2, 'rgba(0,0,0,.25)'); R(o.x + 7, y + 4, 12, 5, '#3d0563'); P([o.x + 2, y + 4, o.x + 13, y - 1, o.x + 24, y + 4, o.x + 13, y + 8], '#57068c'); R(o.x + 22, y + 4, 1, 7, '#f4c430'); } },
+    { k: 'door', door: 1, x: 834, y: 200, w: 32, h: 56, label: 'Now', draw(o, t) { const open = !lockedKeys().length; R(o.x + 14, o.y + 10, 3, 46, '#555'); P([o.x, o.y, o.x + 26, o.y, o.x + 32, o.y + 8, o.x + 26, o.y + 16, o.x, o.y + 16], open ? '#f4a52b' : '#6b6f86'); T('NEXT', o.x + 14, o.y + 8, open ? '#2a1606' : '#ddd', 6.5, 'center', 700); if (open) { g.globalAlpha = .35 + .25 * Math.sin(t * 3); C(o.x + 16, o.y + 8, 16, '#fff3c4'); g.globalAlpha = 1; } } },
+  ]
+},
+];
+function plantObj(x, y) { return { k: 'plant' + x, x: x - 7, y: y - 26, w: 14, h: 26, fh: 8, draw() { plant(x, y); } }; }
+function palmObj(x, y) { return { k: 'palm' + x, x: x - 4, y: y - 46, w: 8, h: 46, fh: 5, draw(o, t) { palm(x, y, t); } }; }
+function shelf(k, x, col, label, name, mem, lines) {
+  return { k, wall: 1, key: 1, x, y: 6, w: 58, h: 58, name, mem, lines, draw(o) { R(o.x, o.y, o.w, 52, '#6e4a2f'); for (let r = 0; r < 3; r++) { R(o.x + 3, o.y + 4 + r * 16, o.w - 6, 13, '#3a2618'); for (let b = 0; b < 8; b++) { const pulled = o.done && r === 1 && b === 3; if (!pulled) R(o.x + 5 + b * 6.2, o.y + 5 + r * 16 + (b % 3), 5, 12 - (b % 3), b % 2 ? col : shade(col)); } } T(label, o.x + o.w / 2, o.y + 56, '#fbf3e4', 5.5); } };
+}
+function shade(c) { const n = parseInt(c.slice(1), 16); const r = (n >> 16) * .75, gg = ((n >> 8) & 255) * .75, b = (n & 255) * .75; return `rgb(${r | 0},${gg | 0},${b | 0})`; }
+function examDesk(i, x, y) {
+  return { k: 'exam' + i, key: 1, mini: 'olymp', arg: i, x, y, w: 46, h: 30, fh: 14, name: `Class ${8 + i} paper`, mem: `Olympiad gold, Class ${8 + i}`, lines: [`The Class ${8 + i} olympiad paper. One question left that nobody in the hall has solved.`], after: [`Gold, Class ${8 + i}.`], film: ['She added the numbers in pairs: 5050. Gold, Class 8.', 'Sevens repeat every four powers. The answer was 1. Gold, Class 9.', 'Not 64 squares. 204. Gold, Class 10.'][i],
+    draw(o) { table(o.x, o.y + 8, o.w, 22, '#a8744a', '#6e4a2f'); R(o.x + 10, o.y + 9, 16, 5, o.done ? '#f4c430' : '#f3efe6'); R(o.x + 30, o.y + 10, 8, 1.4, '#e9b949'); T(`${8 + i}`, o.x + 18, o.y + 3, '#5a3a24', 6); } };
+}
+function cubicle(o) { R(o.x, o.y - 10, o.w, 4, '#7d8a98'); table(o.x, o.y + 10, o.w, 24, '#e9eef3', '#9aa6b2'); R(o.x, o.y - 10, 3, 30, '#7d8a98'); R(o.x + o.w - 3, o.y - 10, 3, 30, '#7d8a98'); }
+function bldg(k, x, sign, col, name, mem, lines, ex = {}) {
+  const w = ex.w || 100, top = ex.tall ? 26 : 40;
+  return { k, key: ex.key, x, y: top, w, h: 112 - top, fh: 22, name, mem, lines,
+    draw(o, t) {
+      R(o.x, o.y, o.w, o.h, col); R(o.x, o.y, o.w, 4, 'rgba(0,0,0,.25)');
+      for (let r = 0; r < (ex.tall ? 3 : 2); r++) for (let c = 0; c < Math.floor(o.w / 22); c++) R(o.x + 8 + c * 22, o.y + 10 + r * 16, 12, 10, ((c + r + (t / 3 | 0)) % 4) ? '#f4e7a1' : '#2a2840');
+      const sy = o.y + o.h - 32;
+      if (ex.awning) { for (let i = 0; i < o.w / 10; i++) R(o.x + i * 10, sy - 6, 10, 6, i % 2 ? ex.awning : '#fff'); }
+      R(o.x + 10, sy, o.w - 20, 12, ex.dark ? '#2a1606' : '#120d1f');
+      if (ex.neon) { g.shadowColor = ex.neon; g.shadowBlur = 6 + 3 * Math.sin(t * 5); }
+      T(sign, o.x + o.w / 2, sy + 6, ex.neon || (ex.dark ? '#f4a52b' : '#fbf3e4'), sign.length > 8 ? 6.5 : 8, 'center', 700);
+      g.shadowBlur = 0;
+      R(o.x + o.w / 2 - 9, o.y + o.h - 20, 18, 20, '#3a2618'); R(o.x + o.w / 2 - 7, o.y + o.h - 18, 14, 12, ex.neon ? 'rgba(255,95,162,.35)' : '#f4e7a1');
+    } };
+}
+
+/* ---------- state ---------- */
+const st = { lvl: 0, p: { x: 40, y: 160, dir: 'down', moving: false }, cam: { x: 0, y: 0 }, mode: 'title', film: false, got: new Set(), done: new Set(), t: 0 };
+let L = null;
+const level = () => L;
+const totalMem = LEVELS.reduce((n, l) => n + l.objs.filter(o => o.mem).length, 0);
+function lockedKeys() { return L ? L.objs.filter(o => o.key && !st.done.has(L.id + ':' + o.k)) : []; }
+function save() { try { localStorage.setItem('lakshmi-lbl', JSON.stringify({ lvl: st.lvl, got: [...st.got], done: [...st.done] })); } catch (e) {} }
+function load() { try { return JSON.parse(localStorage.getItem('lakshmi-lbl') || 'null'); } catch (e) { return null; } }
+
+function loadLevel(i) {
+  st.lvl = i; L = LEVELS[i];
+  L.objs.forEach(o => { o.done = st.done.has(L.id + ':' + o.k); o.playing = false; });
+  st.p.x = L.spawn[0]; st.p.y = L.spawn[1]; st.p.dir = 'right';
+  if (!L.bounds) L.bounds = [10, L.wallH + 8, L.lw - 10, L.lh - 6];
+  updateCam(true);
+  $('chap').innerHTML = `<b>${L.age}</b>${L.title}<span class="np">♪ ${STYLES[L.style].label}</span>`;
+  music.setStyle(L.style);
+  save();
+}
+
+/* ---------- collision ---------- */
+function solids() {
+  const out = [];
+  for (const o of L.objs) {
+    if (o.wall || o.solid === 0) continue;
+    if (o.solidRects) { o.solidRects.forEach(r => out.push(r)); continue; }
+    const fh = Math.min(o.h, o.fh || 10); out.push([o.x, o.y + o.h - fh, o.w, fh]);
+  }
+  return out;
+}
+let SOL = [];
+function blocked(x, y) {
+  const b = L.bounds; if (x < b[0] || x > b[2] || y < b[1] || y > b[3]) return true;
+  for (const r of SOL) if (x + 4 > r[0] && x - 4 < r[0] + r[2] && y + 1 > r[1] && y - 3 < r[1] + r[3]) return true;
+  return false;
+}
+function rectDist(px, py, o) { const cx = Math.max(o.x, Math.min(px, o.x + o.w)), cy = Math.max(o.y, Math.min(py, o.y + o.h)); return Math.hypot(px - cx, py - cy); }
+const interactive = o => o.name || o.door;
+function nearest() {
+  let best = null, bd = 18;
+  for (const o of L.objs) { if (!interactive(o)) continue; const d = rectDist(st.p.x, st.p.y - 6, o); if (d < bd) { bd = d; best = o; } }
+  return best;
+}
+
+/* ---------- input ---------- */
+const keys = new Set(), touchDirs = new Set();
+const KEYMAP = { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right' };
+addEventListener('keydown', e => {
+  if (!$('mini').hidden || !$('book').hidden) { if (e.code === 'Escape' && !$('book').hidden) closeBook(); if (miniKey) miniKey(e); return; }
+  if (KEYMAP[e.code]) { keys.add(KEYMAP[e.code]); e.preventDefault(); }
+  if (['Space', 'KeyE', 'Enter'].includes(e.code)) { e.preventDefault(); if (!e.repeat) action(); }
+  if (e.code === 'KeyM' && st.mode === 'play') openBook();
+});
+addEventListener('keyup', e => { if (KEYMAP[e.code]) keys.delete(KEYMAP[e.code]); });
+addEventListener('blur', () => keys.clear());
+document.querySelectorAll('.dpad button').forEach(b => {
+  const d = b.dataset.d, on = e => { e.preventDefault(); touchDirs.add(d); }, off = e => { e.preventDefault(); touchDirs.delete(d); };
+  b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
+});
+$('aBtn').addEventListener('click', () => action());
+$('cardL').addEventListener('click', () => action());
+screen.addEventListener('click', e => { if (e.target === cv && (st.mode === 'dialog')) action(); });
+$('dialog').addEventListener('click', () => action());
+
+function action() {
+  if (st.mode === 'dialog') { dlgAdvance(); return; }
+  if (st.mode === 'card') { cardSkip && cardSkip(); return; }
+  if (st.mode !== 'play' || st.film) return;
+  const o = nearest(); if (o) interact(o);
+}
+
+/* ---------- dialog ---------- */
+let dlg = null;
+function say(lines, cb) {
+  lines = lines.map(l => typeof l === 'string' ? ['', l] : l);
+  dlg = { lines, i: 0, ch: 0, cb, wait: 0 };
+  st.mode = 'dialog'; $('dialog').hidden = false; showLine();
+}
+function showLine() { const [who] = dlg.lines[dlg.i]; $('who').textContent = who || ''; $('who').hidden = !$('who').textContent; dlg.ch = 0; dlg.wait = 0; $('txt').textContent = ''; }
+function dlgAdvance() {
+  const full = dlg.lines[dlg.i][1];
+  if (dlg.ch < full.length) { dlg.ch = full.length; $('txt').textContent = full; return; }
+  sfx.blip(660); dlg.i++;
+  if (dlg.i >= dlg.lines.length) { $('dialog').hidden = true; const cb = dlg.cb; dlg = null; st.mode = 'play'; cb && cb(); return; }
+  showLine();
+}
+function dlgTick(dt) {
+  if (!dlg) return; const full = dlg.lines[dlg.i][1];
+  if (dlg.ch < full.length) { dlg.ch = Math.min(full.length, dlg.ch + dt * (st.film ? 75 : 55)); $('txt').textContent = full.slice(0, dlg.ch | 0); if ((dlg.ch | 0) % 3 === 0) sfx.tick(); }
+  else if (st.film) { dlg.wait += dt; if (dlg.wait > 1.1 + full.length * .022) dlgAdvance(); }
+}
+
+/* ---------- interact ---------- */
+function interact(o, cb) {
+  st.p.dir = Math.abs(o.x + o.w / 2 - st.p.x) > Math.abs(o.y + o.h - st.p.y) ? (o.x + o.w / 2 > st.p.x ? 'right' : 'left') : (o.y + o.h / 2 < st.p.y ? 'up' : 'down');
+  if (o.door) {
+    const left = lockedKeys();
+    if (left.length) return say(['Not yet. Still to do here: ' + left.map(x => x.name.toLowerCase()).join(', ') + '.'], cb);
+    sfx.door(); return nextLevel();
+  }
+  if (o.cond && !o.cond()) return say(o.lines, cb);
+  if (o.song) { o.playing = true; music.twinkle(); }
+  let lines = o.done && o.after ? o.after : (o.cond && o.after ? o.after : o.lines);
+  if (st.film && lines.length > 1 && !o.npc) lines = lines.slice(-1);
+  say(lines, () => {
+    if (o.mini && !o.done) {
+      const fin = () => { markDone(o); if (o.after) say(o.after, cb); else cb && cb(); };
+      if (st.film) say([o.film || 'Done.'], () => { markDone(o); cb && cb(); });
+      else runMini(o, fin);
+    } else { markDone(o); cb && cb(); }
+  });
+}
+function markDone(o) {
+  const id = L.id + ':' + o.k;
+  if (!st.done.has(id)) { st.done.add(id); o.done = true; }
+  if (o.mem && !st.got.has(id)) { st.got.add(id); toast('Memory: ' + o.mem); sfx.chime(); }
+  $('memCount').textContent = `${st.got.size}/${totalMem}`;
+  if (o.key && !lockedKeys().length && !st.film) setTimeout(() => toast('The way forward is open'), 1600);
+  save();
+}
+let toastT = 0;
+function toast(s) { const el = $('toast'); el.textContent = s; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 1700); }
+
+/* ---------- chapter cards & flow ---------- */
+let cardSkip = null;
+function showCard(i, cb) {
+  const lv = LEVELS[i];
+  st.mode = 'card'; screen.classList.add('cine');
+  const el = $('cardL'); el.hidden = false; el.style.opacity = 0; requestAnimationFrame(() => el.style.opacity = 1);
+  $('cardAge').textContent = lv.age; $('cardTitle').textContent = lv.title; $('cardYr').textContent = lv.years; $('cardNar').textContent = ''; $('cardGo').textContent = st.film ? '' : 'Press E or tap to continue';
+  const cc = $('cardCv').getContext('2d'); const prev = g;
+  let k = 0, done = false, t0 = performance.now();
+  const step = () => {
+    if (done) return;
+    const tt = (performance.now() - t0) / 1000;
+    cc.setTransform(1, 0, 0, 1, 0, 0); cc.clearRect(0, 0, 64, 64);
+    swapCtx(cc, () => { g.setTransform(2, 0, 0, 2, 0, 0); person(16, 30, { ...lv.look, scale: (lv.look.scale || 1) * .95 }, tt, true, 'down'); });
+    k = Math.min(lv.nar.length, k + .9); $('cardNar').textContent = lv.nar.slice(0, k | 0);
+    if (k >= lv.nar.length && tt > (st.film ? lv.nar.length * .045 + 2 : 1.2) && st.film) finish();
+    requestAnimationFrame(step);
+  };
+  const finish = () => {
+    if (done) return; done = true; cardSkip = null; el.style.opacity = 0;
+    setTimeout(() => { el.hidden = true; cb(); }, 700);
+  };
+  cardSkip = () => { if (k < lv.nar.length) { k = lv.nar.length; } else finish(); };
+  step();
+}
+function swapCtx(c, fn) { const old = g; g = c; try { fn(); } finally { g = old; } }
+function beginLevel(i) {
+  showCard(i, () => {
+    loadLevel(i); SOL = solids();
+    $('hud').hidden = false; $('memCount').textContent = `${st.got.size}/${totalMem}`;
+    // camera pan from far right to player
+    st.mode = 'pan'; pan = { t: 0, from: Math.max(0, L.lw - W), to: st.cam.x };
+    st.cam.x = pan.from;
+  });
+}
+let pan = null;
+function afterPan() {
+  if (!st.film) screen.classList.remove('cine');
+  st.mode = 'play';
+  say(L.intro);
+}
+function nextLevel() {
+  if (st.lvl + 1 >= LEVELS.length) return ending();
+  st.mode = 'fade'; fadeOut(() => beginLevel(st.lvl + 1));
+}
+let fade = 0, fadeCb = null;
+function fadeOut(cb) { fade = .0001; fadeCb = cb; }
+
+/* ---------- loop ---------- */
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now; st.t += dt;
+  if (L) { update(dt); draw(); }
+  else drawTitleBg();
+  requestAnimationFrame(frame);
+}
+function update(dt) {
+  dlgTick(dt);
+  if (st.mode === 'pan' && pan) {
+    pan.t += dt / 2.2; const e = pan.t >= 1 ? 1 : (1 - Math.cos(pan.t * Math.PI)) / 2;
+    st.cam.x = pan.from + (pan.to - pan.from) * e;
+    if (pan.t >= 1) { pan = null; afterPan(); }
+    return;
+  }
+  let dx = 0, dy = 0, direct = false;
+  if (st.mode === 'play') {
+    { const d = new Set([...keys, ...touchDirs]); dx = (d.has('right') ? 1 : 0) - (d.has('left') ? 1 : 0); dy = (d.has('down') ? 1 : 0) - (d.has('up') ? 1 : 0); }
+  }
+  const p = st.p; p.moving = !!(dx || dy);
+  if (p.moving) {
+    const len = Math.hypot(dx, dy), sp = (st.film ? 72 : 64) * dt;
+    const mx = dx / len * sp, my = dy / len * sp;
+    if (direct) { p.x += mx; p.y += my; }
+    else { if (!blocked(p.x + mx, p.y)) p.x += mx; if (!blocked(p.x, p.y + my)) p.y += my; }
+    p.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+    if (Math.floor(st.t * 6) !== Math.floor((st.t - dt) * 6)) sfx.step();
+  }
+  updateCam();
+  if (fade > 0) { fade += dt * 1.4; if (fade >= 1) { fade = 0; const cb = fadeCb; fadeCb = null; cb && cb(); } }
+}
+function updateCam(snap) {
+  const tx = Math.max(0, Math.min(L.lw - W, st.p.x - W / 2)), ty = Math.max(0, Math.min(L.lh - H, st.p.y - H / 2 - 10));
+  if (snap || st.mode === 'pan') { if (snap) { st.cam.x = tx; } st.cam.y = ty; return; }
+  st.cam.x += (tx - st.cam.x) * .12; st.cam.y += (ty - st.cam.y) * .12;
+}
+function draw() {
+  g.setTransform(S, 0, 0, S, 0, 0); g.imageSmoothingEnabled = false;
+  R(0, 0, W, H, '#000');
+  g.save(); g.translate(-Math.round(st.cam.x), -Math.round(st.cam.y));
+  L.bg(L, st.t);
+  const walls = L.objs.filter(o => o.wall), rest = L.objs.filter(o => !o.wall);
+  walls.forEach(o => o.draw && o.draw(o, st.t));
+  const list = rest.map(o => ({ z: o.y + o.h, f: () => o.draw && o.draw(o, st.t) }));
+  list.push({ z: st.p.y, f: () => person(st.p.x, st.p.y, L.look, st.t, st.p.moving, st.p.dir) });
+  list.sort((a, b) => a.z - b.z).forEach(d => d.f());
+  // sparkles + prompt
+  const near = st.mode === 'play' && !st.film ? nearest() : null;
+  for (const o of L.objs) {
+    if (!o.name || o.door) continue;
+    const id = L.id + ':' + o.k; if (st.done.has(id) && !(o.cond && o.cond() && !st.got.has(id))) continue;
+    if (o === near) continue;
+    sparkle(o.x + o.w - 3, o.y + 2, st.t);
+  }
+  if (near) { const bx = near.x + near.w / 2, by = near.y - 6 + Math.sin(st.t * 5); R(bx - 6, by - 6, 12, 10, '#fbf3e4'); P([bx - 2, by + 4, bx + 2, by + 4, bx, by + 7], '#fbf3e4'); T(matchMedia('(pointer:coarse)').matches ? 'A' : 'E', bx, by - 1, '#120d1f', 7, 'center', 700); }
+  g.restore();
+  if (L.id === 'science' || L.id === 'code') { g.fillStyle = 'rgba(40,30,90,.12)'; g.fillRect(0, 0, W, H); }
+  if (L.id === 'brooklyn') { const gr = g.createRadialGradient(st.p.x - st.cam.x, st.p.y - st.cam.y - 14, 10, st.p.x - st.cam.x, st.p.y - st.cam.y, 220); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(10,5,30,.35)'); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+  if (fade > 0) { g.fillStyle = `rgba(0,0,0,${Math.min(1, fade)})`; g.fillRect(0, 0, W, H); }
+}
+function drawTitleBg() {
+  g.setTransform(S, 0, 0, S, 0, 0); R(0, 0, W, H, '#120d1f');
+}
+
+/* ---------- mini-games ---------- */
+let miniKey = null;
+function openMini(html) { $('miniCard').innerHTML = html; $('mini').hidden = false; st.mode = 'mini'; const f = $('miniCard').querySelector('button'); f && f.focus(); }
+function closeMini() { $('mini').hidden = true; miniKey = null; st.mode = 'play'; cv.focus && cv.focus(); }
+function runMini(o, done) {
+  const fin = () => { closeMini(); done(); };
+  ({ chess: miniChess, dance: miniDance, code: miniCode, olymp: miniOlymp, pods: miniPods })[o.mini](fin, o.arg);
+}
+function cont(id = 'mcont', label = 'Continue') { return `<button class="btn big primary" id="${id}" type="button" hidden>${label}</button>`; }
+
+function miniChess(fin) {
+  const fen = 'r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR';
+  const G = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
+  const board = []; fen.split('/').forEach(row => { const r = []; for (const ch of row) { if (/\d/.test(ch)) for (let i = 0; i < +ch; i++) r.push(''); else r.push(ch); } board.push(r); });
+  openMini(`<h3>White to move. Mate in one.</h3><p class="sub">Tap a white piece, then the square it should move to.</p><div class="board" id="bd"></div><div class="feedback" id="fb"></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="hintB" type="button">Hint</button>${cont()}</div>`);
+  const bd = $('bd'); let sel = null, solved = false;
+  const files = 'abcdefgh';
+  board.forEach((row, r) => row.forEach((pc, c) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'sq ' + ((r + c) % 2 ? 'd' : 'l'); b.dataset.sq = files[c] + (8 - r);
+    if (pc) { const s = document.createElement('span'); s.className = pc === pc.toUpperCase() ? 'pw' : 'pb'; s.textContent = G[pc.toLowerCase()] + '︎'; b.appendChild(s); }
+    b.setAttribute('aria-label', b.dataset.sq + (pc ? ' ' + (pc === pc.toUpperCase() ? 'white ' : 'black ') + ({ k: 'king', q: 'queen', r: 'rook', b: 'bishop', n: 'knight', p: 'pawn' })[pc.toLowerCase()] : ''));
+    b.onclick = () => click(b, pc); bd.appendChild(b);
+  }));
+  function click(b, pc) {
+    if (solved) return; const sq = b.dataset.sq;
+    if (!sel) { if (pc && pc === pc.toUpperCase()) { sel = b; b.classList.add('sel'); if (pc !== 'Q') { $('fb').className = 'feedback bad'; $('fb').textContent = 'That piece cannot win in one move. Look at the most powerful one.'; } else { $('fb').className = 'feedback'; $('fb').textContent = 'Queen selected. Where does she go?'; } } return; }
+    if (sel.dataset.sq === 'h5' && sq === 'f7') {
+      solved = true; const q = sel.firstChild; b.innerHTML = ''; b.appendChild(q); b.classList.add('win'); sel.classList.remove('sel');
+      $('fb').className = 'feedback good'; $('fb').textContent = 'Qxf7#. The bishop on c4 guards the queen, and the king has nowhere to go. Checkmate.'; sfx.chime(); $('mcont').hidden = false; $('mcont').focus();
+    } else { sel.classList.remove('sel'); sel = null; $('fb').className = 'feedback bad'; $('fb').textContent = 'Not checkmate yet. Try again.'; sfx.blip(180); }
+  }
+  $('hintB').onclick = () => { $('fb').className = 'feedback'; $('fb').textContent = 'The weakest square near the black king is f7. Only the king protects it.'; };
+  $('mcont').onclick = fin;
+}
+
+function miniDance(fin) {
+  openMini(`<h3>Adavu practice</h3><p class="sub">Press the matching arrow (or tap the buttons) when each step reaches the line. Tha, thai, thaam.</p><canvas class="dance" id="dc" width="320" height="220"></canvas><div class="lanes"><button data-l="0" type="button" aria-label="Left">◀</button><button data-l="1" type="button" aria-label="Down">▼</button><button data-l="2" type="button" aria-label="Up">▲</button><button data-l="3" type="button" aria-label="Right">▶</button></div><div class="feedback" id="fb">Get ready…</div><div style="display:flex;gap:8px">${cont()}<button class="btn" id="skipB" type="button">Skip</button></div>`);
+  const dc = $('dc').getContext('2d'); const BOLS = ['Tha', 'Thai', 'Thaam', 'Dhit', 'Thai', 'Thaam', 'Tha', 'Ka', 'Dhi', 'Mi', 'Tha', 'Thaam'];
+  const seq = [0, 3, 1, 2, 0, 3, 1, 1, 2, 3, 0, 2], gap = .62, t0 = performance.now() / 1000 + 1.4, notes = seq.map((l, i) => ({ l, t: t0 + i * gap, hit: 0, bol: BOLS[i], beat: false }));
+  let score = 0, over = false, fx = [];
+  const ARW = ['◀', '▼', '▲', '▶'], COL = ['#e0475b', '#2bb3a3', '#f4a52b', '#a77bdb'];
+  function hit(l) {
+    if (over) return; const now = performance.now() / 1000;
+    const n = notes.find(n => !n.hit && n.l === l && Math.abs(n.t - now) < .2);
+    if (n) { n.hit = 1; score++; fx.push({ l, t: now, ok: 1 }); sfx.bell(); $('fb').textContent = n.bol + '!'; $('fb').className = 'feedback good'; }
+    else { fx.push({ l, t: now, ok: 0 }); }
+  }
+  miniKey = e => { const m = { ArrowLeft: 0, KeyA: 0, ArrowDown: 1, KeyS: 1, ArrowUp: 2, KeyW: 2, ArrowRight: 3, KeyD: 3 }[e.code]; if (m !== undefined) { e.preventDefault(); hit(m); } };
+  document.querySelectorAll('.lanes button').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); hit(+b.dataset.l); }));
+  const hy = 180, sp = 150;
+  function loop() {
+    if ($('mini').hidden) return;
+    const now = performance.now() / 1000;
+    dc.fillStyle = '#24142f'; dc.fillRect(0, 0, 320, 220);
+    for (let l = 0; l < 4; l++) { dc.fillStyle = 'rgba(255,255,255,.05)'; dc.fillRect(40 + l * 64, 0, 48, 220); dc.strokeStyle = COL[l]; dc.lineWidth = 2; dc.strokeRect(42 + l * 64, hy - 16, 44, 32); dc.fillStyle = COL[l]; dc.font = '600 18px "Pixelify Sans", monospace'; dc.textAlign = 'center'; dc.textBaseline = 'middle'; dc.globalAlpha = .45; dc.fillText(ARW[l], 64 + l * 64, hy); dc.globalAlpha = 1; }
+    for (const n of notes) {
+      if (!n.beat && now >= n.t) { n.beat = true; sfx.drum(); }
+      if (n.hit) continue; const y = hy - (n.t - now) * sp; if (y < -20 || y > 240) continue;
+      dc.fillStyle = COL[n.l]; dc.fillRect(44 + n.l * 64, y - 14, 40, 28); dc.fillStyle = '#120d1f'; dc.font = '700 16px "Pixelify Sans", monospace'; dc.fillText(ARW[n.l], 64 + n.l * 64, y - 2); dc.font = '600 9px "Pixelify Sans", monospace'; dc.fillText(n.bol, 64 + n.l * 64, y + 9);
+    }
+    fx = fx.filter(f => now - f.t < .3); for (const f of fx) { dc.globalAlpha = 1 - (now - f.t) / .3; dc.fillStyle = f.ok ? '#fff6c4' : '#e0475b'; dc.fillRect(42 + f.l * 64, hy - 18, 44, 36); dc.globalAlpha = 1; }
+    dc.fillStyle = '#fbf3e4'; dc.font = '600 13px "Pixelify Sans", monospace'; dc.textAlign = 'left'; dc.fillText(`Steps ${score}/${notes.length}`, 8, 14);
+    if (!over && now > notes[notes.length - 1].t + .5) {
+      over = true; $('fb').className = 'feedback good';
+      $('fb').textContent = score >= 9 ? `${score} of 12. Guru nods once, which from her is a standing ovation.` : score >= 5 ? `${score} of 12. A good first adavu. Your feet will learn the rest.` : `${score} of 12. Everyone starts here. You came back the next day anyway.`;
+      $('mcont').hidden = false; $('mcont').focus();
+    }
+    requestAnimationFrame(loop);
+  }
+  loop(); $('mcont').onclick = fin; $('skipB').onclick = fin;
+}
+
+function miniCode(fin) {
+  openMini(`<h3>Make it say hello. Three times.</h3><p class="sub">Pick the line that prints Hello, World exactly three times.</p><div class="opts" id="opts"></div><div class="console" id="con">&gt; _</div><div class="feedback" id="fb"></div>${cont()}`);
+  const opts = [
+    ['for i in range(1, 3):\n    print("Hello, World")', 'That prints only twice. range(1, 3) gives 1 and 2.'],
+    ['for i in range(3):\n    print("Hello, World")', null],
+    ['i = 0\nwhile i < 3:\n    print("Hello, World")', 'i never changes, so this runs forever. Your computer fan agrees.'],
+  ];
+  opts.forEach(([code, why], k) => {
+    const b = document.createElement('button'); b.className = 'opt'; b.type = 'button'; b.textContent = code;
+    b.onclick = () => {
+      if (why) { b.classList.add('bad'); $('fb').className = 'feedback bad'; $('fb').textContent = why; sfx.blip(180); return; }
+      b.classList.add('good'); $('fb').className = 'feedback good'; $('fb').textContent = 'range(3) is 0, 1, 2. Three loops.'; let n = 0; $('con').textContent = '> python hello.py\n';
+      const iv = setInterval(() => { $('con').textContent += 'Hello, World\n'; sfx.blip(880); if (++n === 3) { clearInterval(iv); $('mcont').hidden = false; $('mcont').focus(); } }, 380);
+      document.querySelectorAll('.opt').forEach(x => x.disabled = true);
+    };
+    $('opts').appendChild(b);
+  });
+  $('mcont').onclick = fin;
+}
+
+function miniOlymp(fin, i) {
+  const Q = [
+    ['Add every whole number from 1 to 100. What is the total?', ['5000', '5050', '10100'], 1, 'Pair them: 1+100, 2+99, … fifty pairs of 101. That is 5050.'],
+    ['What is the last digit of 7 to the power 100?', ['1', '3', '7', '9'], 0, 'Last digits of powers of 7 cycle 7, 9, 3, 1. 100 is a multiple of 4, so it ends in 1.'],
+    ['Count every square of every size on a chessboard. How many are there?', ['64', '160', '204'], 2, '64 + 49 + 36 + 25 + 16 + 9 + 4 + 1 = 204. Chess was useful after all.'],
+  ][i];
+  openMini(`<h3>Olympiad, Class ${8 + i}</h3><p>${Q[0]}</p><div class="opts" id="opts"></div><div class="feedback" id="fb"></div>${cont('mcont', 'Hand in the paper')}`);
+  Q[1].forEach((a, k) => {
+    const b = document.createElement('button'); b.className = 'opt'; b.type = 'button'; b.textContent = a;
+    b.onclick = () => {
+      if (k !== Q[2]) { b.classList.add('bad'); $('fb').className = 'feedback bad'; $('fb').textContent = 'Check that again. There is a trick that makes it quick.'; sfx.blip(180); return; }
+      b.classList.add('good'); $('fb').className = 'feedback good'; $('fb').textContent = Q[3]; sfx.chime(); $('mcont').hidden = false; $('mcont').focus();
+      document.querySelectorAll('.opt').forEach(x => x.disabled = true);
+    };
+    $('opts').appendChild(b);
+  });
+  $('mcont').onclick = fin;
+}
+
+function miniPods(fin) {
+  openMini(`<h3>Pods are crashing</h3><p class="sub">Tap each red pod to restart it. Keep the cluster up until you have fixed 10.</p><div class="stats"><span>Restarted <b id="ps">0</b>/10</span><span>Uptime <b id="pu">100.00</b>%</span><span>Time <b id="pt">30</b>s</span></div><div class="pods" id="pods"></div><div class="feedback" id="fb"></div>${cont()}`);
+  const N = 9, state = Array(N).fill(0), since = Array(N).fill(0); let fixed = 0, up = 100, t0 = performance.now(), over = false;
+  for (let k = 0; k < N; k++) { const b = document.createElement('button'); b.type = 'button'; b.className = 'pod'; b.textContent = `pod-${k + 1}`; b.onclick = () => { if (over || !state[k]) return; state[k] = 0; fixed++; sfx.blip(990); render(); if (fixed >= 10) end(); }; $('pods').appendChild(b); }
+  function render() { [...$('pods').children].forEach((b, k) => { b.classList.toggle('crash', !!state[k]); b.textContent = state[k] ? `pod-${k + 1} ✕` : `pod-${k + 1}`; }); $('ps').textContent = fixed; $('pu').textContent = up.toFixed(2); }
+  const iv = setInterval(() => {
+    if (over) return; const now = performance.now();
+    const free = state.map((s, k) => s ? -1 : k).filter(k => k >= 0);
+    if (free.length && Math.random() < .75) { const k = free[Math.random() * free.length | 0]; state[k] = 1; since[k] = now; }
+    state.forEach((s, k) => { if (s && now - since[k] > 2200) { up = Math.max(99.9, up - .01); since[k] = now; } });
+    const left = Math.max(0, 30 - (now - t0) / 1000); $('pt').textContent = left | 0; render(); if (left <= 0) end();
+  }, 650);
+  function end() { over = true; clearInterval(iv); $('fb').className = 'feedback good'; $('fb').textContent = `Cluster stable at ${up.toFixed(2)}% uptime. Now fix the cause so this never happens again.`; $('mcont').hidden = false; $('mcont').focus(); state.fill(0); render(); }
+  $('mcont').onclick = () => { clearInterval(iv); fin(); };
+}
+
+/* ---------- memory book ---------- */
+function openBook() {
+  const prevMode = st.mode; st.bookPrev = prevMode; st.mode = 'book';
+  let h = `<h3>Memory book</h3><p class="sub">${st.got.size} of ${totalMem} memories found. Walk up to sparkles to find the rest.</p>`;
+  LEVELS.forEach((lv, i) => {
+    const ms = lv.objs.filter(o => o.mem); const n = ms.filter(o => st.got.has(lv.id + ':' + o.k)).length;
+    h += `<div class="chapter"><h4>${lv.age} · ${lv.title} <span>${n}/${ms.length}</span></h4><ul>${ms.map(o => st.got.has(lv.id + ':' + o.k) ? `<li>${o.mem}</li>` : `<li class="no">???</li>`).join('')}</ul></div>`;
+  });
+  h += `<button class="btn big primary" id="closeBook" type="button">Close</button>`;
+  $('bookCard').innerHTML = h; $('book').hidden = false; $('closeBook').onclick = closeBook; $('closeBook').focus();
+}
+function closeBook() { $('book').hidden = true; st.mode = st.bookPrev || 'play'; }
+$('bookBtn').onclick = () => { if (st.mode === 'play') openBook(); };
+$('endBook').onclick = openBook;
+
+/* ---------- ending ---------- */
+function ending() {
+  st.mode = 'fade';
+  fadeOut(() => {
+    st.mode = 'end'; $('hud').hidden = true; screen.classList.add('cine');
+    music.setStyle('rnb');
+    const el = $('endL'); el.hidden = false;
+    const lines = [
+      ['h3', 'Lakshmi, now'],
+      ['ln', 'Still building. Still going out. Still saying yes to hackathons.'],
+      ['ln', 'Next level: <span>loading…</span>'],
+      ['ln', '&nbsp;'],
+      ['h3', 'Starring'], ['ln', 'Lakshmi Shibu Raj <span>as herself, ages 3 to now</span>'],
+      ['h3', 'Chapters'], ...LEVELS.map(l => ['ln', `${l.age} <span>·</span> ${l.title}`]),
+      ['h3', 'Memories found'], ['ln', `${st.got.size} <span>of</span> ${totalMem}`],
+      ['h3', 'Filmed on location in'], ['ln', 'Ryan International School · NIT Karnataka, Surathkal · Chennai · Bensonhurst, Brooklyn · NYU Tandon'],
+      ['h3', 'Soundtrack'], ['ln', 'Original chiptune written in the style of each era'], ['ln', 'Carnatic <span>·</span> Malayalam film songs <span>·</span> pop <span>·</span> rock'], ['ln', 'K-pop: aespa, MAMAMOO'], ['ln', 'Travis Scott <span>·</span> The Weeknd <span>·</span> M.I.A. <span>·</span> Cassie'],
+      ['h3', 'Special thanks'], ['ln', 'Every teacher, guru, invigilator, teammate, friend and bodega cat along the way.'],
+      ['ln', '&nbsp;'], ['h3', 'The end, for now.'],
+    ];
+    const cr = $('credits'); cr.innerHTML = lines.map(([c, s]) => c === 'h3' ? `<h3>${s}</h3>` : `<div class="ln">${s}</div>`).join('');
+    cr.style.transition = 'none'; cr.style.transform = 'translateY(0)';
+    const hgt = cr.scrollHeight + el.clientHeight * .6;
+    requestAnimationFrame(() => requestAnimationFrame(() => { cr.style.transition = `transform ${Math.max(18, hgt / 22)}s linear`; cr.style.transform = `translateY(-${hgt}px)`; }));
+    setTimeout(() => { $('endActions').hidden = false; }, 5000);
+  });
+}
+$('againBtn').onclick = () => { st.got.clear(); st.done.clear(); save(); location.hash = ''; resetToTitle(); };
+function resetToTitle() { $('endL').hidden = true; $('endActions').hidden = true; L = null; st.mode = 'title'; screen.classList.remove('cine'); $('titleL').hidden = false; $('hud').hidden = true; checkContinue(); }
+
+/* ---------- title ---------- */
+function checkContinue() { const s = load(); $('contBtn').hidden = !(s && (s.lvl > 0 || (s.got && s.got.length))); }
+checkContinue();
+function start(film, fromSave) {
+  if (document.activeElement) document.activeElement.blur();
+  audio.init(); $('titleL').hidden = true; st.film = film;
+  if (film) { st.got.clear(); st.done.clear(); }
+  let i = 0;
+  if (fromSave) { const s = load(); if (s) { i = s.lvl || 0; (s.got || []).forEach(x => st.got.add(x)); (s.done || []).forEach(x => st.done.add(x)); } }
+  else if (!film) { st.got.clear(); st.done.clear(); }
+  $('hint').hidden = film; screen.classList.toggle('cine', film);
+  music.start();
+  beginLevel(i);
+}
+$('playBtn').onclick = () => start(false, false);
+$('contBtn').onclick = () => start(false, true);
+
+/* ---------- audio ---------- */
+const audio = { ctx: null, master: null, on: true, init() { if (this.ctx) return; try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.master = this.ctx.createGain(); this.master.gain.value = .5; this.master.connect(this.ctx.destination); } catch (e) { this.ctx = null; } } };
+function tone(f, d, type = 'square', v = .06, when = 0) {
+  const a = audio.ctx; if (!a || !audio.on) return; const t = a.currentTime + when;
+  const o = a.createOscillator(), gn = a.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
+  gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(v, t + .01); gn.gain.exponentialRampToValueAtTime(.0001, t + d);
+  o.connect(gn); gn.connect(audio.master); o.start(t); o.stop(t + d + .05);
+}
+const sfx = {
+  blip: f => tone(f, .07, 'square', .03), tick: () => tone(1400, .015, 'square', .008),
+  step: () => tone(120 + Math.random() * 30, .03, 'triangle', .02),
+  chime: () => { tone(880, .3, 'triangle', .05); tone(1320, .4, 'triangle', .04, .08); },
+  door: () => { tone(330, .2, 'triangle', .05); tone(495, .3, 'triangle', .05, .1); tone(660, .5, 'triangle', .05, .2); },
+  bell: () => { tone(2100, .25, 'sine', .04); tone(3150, .2, 'sine', .02); },
+  drum: () => { const a = audio.ctx; if (!a || !audio.on) return; const t = a.currentTime, o = a.createOscillator(), gn = a.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(180, t); o.frequency.exponentialRampToValueAtTime(60, t + .15); gn.gain.setValueAtTime(.18, t); gn.gain.exponentialRampToValueAtTime(.0001, t + .2); o.connect(gn); gn.connect(audio.master); o.start(t); o.stop(t + .25); },
+};
+/* Era soundtrack: original step-sequenced chiptune written in the style of each period. */
+let NOISE = null;
+function noiseBuf() { if (NOISE) return NOISE; const a = audio.ctx, b = a.createBuffer(1, a.sampleRate * .5, a.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return NOISE = b; }
+let FX = null;
+function fxBus() { if (FX) return FX; const a = audio.ctx, dl = a.createDelay(1), fb = a.createGain(), wet = a.createGain(); dl.delayTime.value = .32; fb.gain.value = .32; wet.gain.value = .5; dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(audio.master); return FX = dl; }
+let DIST = null;
+function distBus() { if (DIST) return DIST; const a = audio.ctx, ws = a.createWaveShaper(), c = new Float32Array(512); for (let i = 0; i < 512; i++) { const x = i / 256 - 1; c[i] = Math.tanh(x * 6); } ws.curve = c; const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400; const gn = a.createGain(); gn.gain.value = .5; ws.connect(lp); lp.connect(gn); gn.connect(audio.master); return DIST = ws; }
+function N(f, t, d, type = 'triangle', v = .03, o = {}) {
+  const a = audio.ctx, osc = a.createOscillator(), gn = a.createGain(); osc.type = type;
+  if (o.from) { osc.frequency.setValueAtTime(o.from, t); osc.frequency.exponentialRampToValueAtTime(f, t + (o.glide || .08)); } else osc.frequency.setValueAtTime(f, t);
+  if (o.vib) { const l = a.createOscillator(), lg = a.createGain(); l.frequency.value = 5.5; lg.gain.value = f * .012; l.connect(lg); lg.connect(osc.frequency); l.start(t); l.stop(t + d + .1); }
+  gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(v, t + (o.att || .008)); gn.gain.exponentialRampToValueAtTime(.0001, t + d);
+  let out = gn;
+  if (o.lp) { const f2 = a.createBiquadFilter(); f2.type = 'lowpass'; f2.frequency.value = o.lp; gn.connect(f2); out = f2; }
+  out.connect(o.dist ? distBus() : audio.master); if (o.fx) out.connect(fxBus());
+  osc.connect(gn); osc.start(t); osc.stop(t + d + .05);
+}
+function NZ(t, d, v, hp = 6000) { const a = audio.ctx, s = a.createBufferSource(), f = a.createBiquadFilter(), gn = a.createGain(); s.buffer = noiseBuf(); f.type = hp > 0 ? 'highpass' : 'bandpass'; f.frequency.value = Math.abs(hp); gn.gain.setValueAtTime(v, t); gn.gain.exponentialRampToValueAtTime(.0001, t + d); s.connect(f); f.connect(gn); gn.connect(audio.master); s.start(t); s.stop(t + d + .02); }
+function KICK(t, v = .2, low = 50) { const a = audio.ctx, o = a.createOscillator(), gn = a.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(low, t + .12); gn.gain.setValueAtTime(v, t); gn.gain.exponentialRampToValueAtTime(.0001, t + .3); o.connect(gn); gn.connect(audio.master); o.start(t); o.stop(t + .35); }
+const st2 = (r, n) => r * Math.pow(2, n / 12);
+const rnd = (s) => { const x = Math.sin(s * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const STYLES = {
+  carnatic: { bpm: 78, label: 'Carnatic', root: 146.8, play(s, t, r, m) {
+    const b = s % 16;
+    if (b === 0) N(st2(r, 7), t, 2.6, 'sawtooth', .012, { lp: 900, att: .02 });
+    if (b === 4 || b === 8) N(st2(r, 12), t, 2.4, 'sawtooth', .011, { lp: 900, att: .02 });
+    if (b === 12) N(r, t, 2.8, 'sawtooth', .014, { lp: 700, att: .02 });
+    const sc = [0, 1, 4, 5, 7, 8, 11, 12, 13, 16, 17, 19];
+    if (b % 2 === 0 && rnd(s) < .7) { m.mi = Math.max(0, Math.min(sc.length - 1, (m.mi || 4) + (rnd(s + 9) < .5 ? -1 : 1) * (rnd(s + 3) < .8 ? 1 : 2))); const f = st2(r * 2, sc[m.mi]); N(f, t, .55, 'triangle', .03, { from: m.lf || f, glide: .09 }); m.lf = f; }
+    if (b === 0 || b === 8) N(90, t, .25, 'sine', .12, { from: 160, glide: .1 });
+    if ([3, 6, 11, 14].includes(b)) N(720, t, .06, 'sine', .04);
+    if (b === 10) NZ(t, .05, .03, -2500);
+  } },
+  malayalam: { bpm: 96, label: 'Malayalam film songs', root: 196, play(s, t, r, m) {
+    const b = s % 16, bar = (s / 16 | 0) % 4, ch = [[0, 4, 7], [9, 12, 16], [5, 9, 12], [7, 11, 14]][bar];
+    if (b === 0) ch.forEach(n => N(st2(r, n), t, 2.4, 'sine', .014, { att: .3 }));
+    const mel = [0, 3, 6, 8, 11, 14], sc = [0, 2, 4, 7, 9, 12, 14, 16];
+    if (mel.includes(b)) { const n = sc[(Math.floor(rnd(s * 1.7) * 5) + bar * 2) % sc.length]; N(st2(r * 2, n), t, b === 0 ? .9 : .45, 'sine', .035, { vib: 1, fx: 1, att: .03 }); }
+    if (b === 0 || b === 10) N(110, t, .3, 'sine', .1, { from: 200, glide: .06 });
+    if (b === 4 || b === 7 || b === 12) N(880, t, .08, 'triangle', .025);
+    if (b % 4 === 2) NZ(t, .04, .015, 7000);
+  } },
+  pop: { bpm: 112, label: 'Pop', root: 220, play(s, t, r) {
+    const b = s % 16, bar = (s / 16 | 0) % 4, prog = [0, 7, 9, 5][bar], maj = prog === 9 ? [0, 3, 7] : [0, 4, 7];
+    if (b % 2 === 0) N(st2(r * 2, prog + maj[(b / 2) % 3]), t, .18, 'square', .014);
+    if (b % 4 === 0) N(st2(r / 2, prog), t, .35, 'triangle', .07);
+    if (b === 0 || b === 8 || b === 10) KICK(t, .16);
+    if (b === 4 || b === 12) NZ(t, .14, .06, -1800);
+    if (b % 2 === 1) NZ(t, .03, .02, 8000);
+    const hook = [12, -1, 16, -1, 19, -1, 16, 14, 12, -1, -1, 9, 12, -1, 14, -1];
+    if (bar % 2 === 1 && hook[b] >= 0) N(st2(r * 2, hook[b] + (bar === 3 ? -3 : 0)), t, .22, 'square', .02, { fx: 1 });
+  } },
+  rock: { bpm: 134, label: 'Rock', root: 164.8, play(s, t, r) {
+    const b = s % 16, bar = (s / 16 | 0) % 4, p = [0, -2, -4, -2][bar];
+    if (b % 2 === 0) { const f = st2(r, p); N(f, t, .2, 'sawtooth', .05, { dist: 1 }); N(f * 1.5, t, .2, 'sawtooth', .04, { dist: 1 }); }
+    if (b % 2 === 0) N(st2(r / 2, p), t, .18, 'triangle', .07);
+    if (b === 0 || b === 6 || b === 8) KICK(t, .2);
+    if (b === 4 || b === 12) NZ(t, .18, .08, -2000);
+    if (b % 2 === 0) NZ(t, .04, .02, 9000);
+    if (b === 0 && bar === 0) NZ(t, .9, .04, 5000);
+  } },
+  kpop: { bpm: 124, label: 'K-pop · aespa, MAMAMOO era', root: 174.6, play(s, t, r) {
+    const b = s % 16, bar = (s / 16 | 0) % 4, p = [0, -4, 3, -2][bar];
+    if (b % 4 === 0) KICK(t, .2, 45);
+    if (b === 4 || b === 12) { NZ(t, .1, .06, -1500); NZ(t + .01, .08, .04, -1500); }
+    if (b % 4 === 2) NZ(t, .05, .03, 9000);
+    const bass = [0, -1, 12, -1, 0, 0, 12, -1, 0, -1, 12, 0, -1, 12, -1, 10];
+    if (bass[b] >= 0) N(st2(r / 2, p + bass[b]), t, .16, 'sawtooth', .04, { lp: 700 });
+    const hook = [7, -1, 10, 7, -1, 3, 5, -1, 7, -1, 10, 12, -1, 10, 7, -1];
+    if (hook[b] >= 0 && bar !== 3) N(st2(r * 2, hook[b] + p), t, .16, 'square', .018, { fx: 1 });
+    if (bar === 3 && b % 2 === 0) N(st2(r * 4, [0, 3, 7, 10, 12, 10, 7, 3][b / 2]), t, .1, 'square', .012);
+  } },
+  rnb: { bpm: 100, label: 'R&B · The Weeknd, Cassie era', root: 155.6, play(s, t, r) {
+    const b = s % 16, bar = (s / 16 | 0) % 4, p = [0, -4, -7, -2][bar];
+    if (b === 0) [0, 3, 7, 10].forEach(n => N(st2(r, p + n), t, 2.3, 'sawtooth', .01, { lp: 1200, att: .25 }));
+    if (b % 2 === 0) N(st2(r / 2, p + (b % 8 === 6 ? 12 : 0)), t, .2, 'sawtooth', .045, { lp: 500 });
+    if (b === 0 || b === 9) KICK(t, .2);
+    if (b === 4 || b === 12) { NZ(t, .35, .07, -1200); }
+    if (b % 2 === 0) NZ(t, .03, .018, 9000);
+    const arp = [0, 7, 10, 15, 12, 10, 7, 3];
+    if (b % 2 === 1) N(st2(r * 2, p + arp[(b >> 1) % 8]), t, .25, 'triangle', .018, { fx: 1 });
+  } },
+  trap: { bpm: 142, label: 'Trap · Travis Scott, M.I.A. era', root: 138.6, play(s, t, r, m) {
+    const b = s % 16, bar = (s / 16 | 0) % 4, p = [0, 0, -4, -2][bar];
+    if (b === 0) [0, 3, 7].forEach(n => N(st2(r * 2, p + n), t, 3.2, 'sawtooth', .007, { lp: 800, att: .5 }));
+    if (b === 0 || b === 7 || b === 10) { KICK(t, .16); N(st2(r / 4, p), t, 1.1, 'sine', .14, b === 10 ? { from: st2(r / 4, p + 7), glide: .2 } : {}); }
+    if (b === 8) { NZ(t, .25, .09, -1400); NZ(t, .12, .05, -3000); }
+    const roll = bar === 3 && b >= 12;
+    NZ(t, .025, .022, 9500); if (roll) NZ(t + 60 / 142 / 8, .02, .02, 9500);
+    const bell = [15, -1, -1, 12, -1, -1, 10, -1, 7, -1, -1, -1, 10, -1, 12, -1];
+    if (bar % 2 === 0 && bell[b] >= 0) N(st2(r * 2, bell[b] + p), t, .5, 'sine', .03, { fx: 1 });
+  } },
+};
+const music = {
+  style: 'carnatic', step: 0, iv: 0, next: 0, mem: {}, hold: false,
+  setStyle(name) { if (this.style === name) return; this.style = name; this.step = 0; this.mem = {}; },
+  start() {
+    if (this.iv || !audio.ctx) return; this.next = audio.ctx.currentTime + .1;
+    this.iv = setInterval(() => {
+      const a = audio.ctx; if (!a) return; const S2 = STYLES[this.style], dt = 60 / S2.bpm / 4;
+      if (this.next < a.currentTime - .5) this.next = a.currentTime + .05;
+      while (this.next < a.currentTime + .15) { if (audio.on && !this.hold) { try { S2.play(this.step, this.next, S2.root, this.mem); } catch (e) {} } this.step++; this.next += dt; }
+    }, 30);
+  },
+  twinkle() { const n = [0, 0, 7, 7, 9, 9, 7, -1, 5, 5, 4, 4, 2, 2, 0]; this.hold = true; n.forEach((x, i) => { if (x >= 0) tone(392 * Math.pow(2, x / 12), .32, 'square', .035, i * .34); }); setTimeout(() => { this.hold = false; const o = L && L.objs.find(o => o.song); if (o) o.playing = false; }, n.length * 340 + 200); },
+};
+$('muteBtn').onclick = () => { audio.on = !audio.on; $('muteBtn').textContent = audio.on ? 'Sound on' : 'Sound off'; $('muteBtn').setAttribute('aria-pressed', String(!audio.on)); };
+
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
